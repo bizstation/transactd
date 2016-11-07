@@ -84,18 +84,27 @@ def testCreateDatabase(db)
   expect(db.stat()).to eq 0
 end
 
+def getMode(mode)
+  mode += 128 if mode <= -128
+  mode += 64 if mode <= -64
+  mode += 32 if mode <= -32
+  mode += 16 if mode <= -16
+  return mode
+end
+
 def testOpenDatabase(db)
   db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
+  expect(getMode(db.mode)).to eq Transactd::TD_OPEN_NORMAL
   # test statMsg
   msg = db.statMsg()
   expect(msg).to eq ''
-
 end
 
 def testCreateTable(db)
   testOpenDatabase(db)
   dbdef = db.dbDef()
+  expect(getMode(dbdef.mode)).to eq Transactd::TD_OPEN_NORMAL
   expect(dbdef).not_to be nil
   td = Transactd::Tabledef.new()
   td.setTableName(TABLENAME)
@@ -192,6 +201,7 @@ def testOpenTable(db)
   testOpenDatabase(db)
   tb = db.openTable(TABLENAME)
   expect(db.stat()).to eq 0
+  expect(getMode(tb.mode)).to eq Transactd::TD_OPEN_NORMAL
   return tb
 end
 
@@ -1505,6 +1515,7 @@ def testExclusive()
   # ------------------------------------------------------
   db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_EXCLUSIVE)
   expect(db.stat()).to eq 0
+  expect(getMode(db.mode)).to eq Transactd::TD_OPEN_EXCLUSIVE
   tb = db.openTable(TABLENAME)
   expect(db.stat()).to eq 0
   
@@ -1516,6 +1527,7 @@ def testExclusive()
   # database open error. Check database::stat()
   expect(db2.stat()).to eq Transactd::STATUS_CANNOT_LOCK_TABLE
   dd = db.dbDef()
+  expect(getMode(dd.mode)).to eq Transactd::TD_OPEN_EXCLUSIVE
   td = dd.tableDefs(1)
   dd.updateTableDef(1)
   expect(dd.stat()).to eq 0

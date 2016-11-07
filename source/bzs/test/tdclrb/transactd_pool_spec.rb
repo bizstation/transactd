@@ -46,10 +46,22 @@ BDFNAME = '?dbfile=' + SCHEMANAME + '.bdf'
 URL = PROTOCOL + '://' + USERPART + HOSTNAME + '/' + DBNAME + BDFNAME + PASSPART
 TABLENAME = 'user'
 
+def getMode(mode)
+  mode += 128 if mode <= -128
+  mode += 64 if mode <= -64
+  mode += 32 if mode <= -32
+  mode += 16 if mode <= -16
+  return mode
+end
+
 describe Transactd, 'pool' do
   it 'create ConnectParams' do
     cp = Transactd::ConnectParams.new(URL)
     expect(cp.uri()).to eq URL
+    cp.setMode(Transactd::TD_OPEN_NORMAL)
+    expect(getMode(cp.mode)).to eq Transactd::TD_OPEN_NORMAL
+    cp.setMode(Transactd::TD_OPEN_READONLY)
+    expect(getMode(cp.mode)).to eq Transactd::TD_OPEN_READONLY
     cp = Transactd::ConnectParams.new(PROTOCOL, HOSTNAME, DBNAME, SCHEMANAME, USERNAME, PASSWORD)
     expect(cp.uri()).to eq URL
   end
@@ -57,8 +69,11 @@ describe Transactd, 'pool' do
   it 'use connections' do
     Transactd::PooledDbManager::setMaxConnections(3)
     cp = Transactd::ConnectParams.new(URL)
+    cp.setMode(Transactd::TD_OPEN_READONLY)
+    expect(getMode(cp.mode)).to eq Transactd::TD_OPEN_READONLY
     expect(cp.uri()).to eq URL
     dbm1 = Transactd::PooledDbManager.new(cp)
+    expect(getMode(dbm1.mode)).to eq Transactd::TD_OPEN_READONLY
     dbm2 = Transactd::PooledDbManager.new(cp)
     dbm3 = Transactd::PooledDbManager.new(cp)
     dbm1.unUse()
@@ -73,13 +88,17 @@ describe Transactd, 'pool' do
     dbm3.unUse()
     dbm4.unUse()
     dbm5.unUse()
+    dbm1.reset(30)
   end
   
   it 'connect to table' do
     Transactd::PooledDbManager::setMaxConnections(3)
     cp = Transactd::ConnectParams.new(URL)
+    cp.setMode(Transactd::TD_OPEN_NORMAL)
+    expect(getMode(cp.mode)).to eq Transactd::TD_OPEN_NORMAL
     expect(cp.uri()).to eq URL
     dbm = Transactd::PooledDbManager.new(cp)
+    expect(getMode(dbm.mode)).to eq Transactd::TD_OPEN_NORMAL
     atu = Transactd::ActiveTable.new(dbm, 'user')
     q = Transactd::Query.new()
     atu.alias('名前', 'name')
@@ -93,6 +112,7 @@ describe Transactd, 'pool' do
     expect(rs[0][2]).to eq 1
     atu.release()
     dbm.unUse()
+    dbm.reset(30)
   end
   
   it 'can be used in MultiThreads' do

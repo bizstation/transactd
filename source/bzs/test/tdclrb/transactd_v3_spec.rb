@@ -956,7 +956,9 @@ describe Transactd, 'V3Features' do
     # other database connection
     db_other = Transactd::Database.new()
     openDatabase(db_other)
-    tb_other = db_other.openTable("user")
+    tb_other = db_other.openTable("user", Transactd::TD_OPEN_READONLY)
+    expect(db_other.stat()).to eq 0
+    db_other.beginTrn
     expect(db_other.stat()).to eq 0
     # connMgr connection
     db = Transactd::Database.new()
@@ -971,10 +973,27 @@ describe Transactd, 'V3Features' do
     recs = mgr.inUseDatabases(recs[0].conId)
     expect(mgr.stat()).to eq 0
     expect(recs.size()).to eq 1
+    #   connRecord::inTransaction, connRecord::inSnapshot
+    rec = recs[0]
+    expect(rec.name).to eq DBNAME
+    expect(rec.inTransaction).to be true
+    expect(rec.inSnapshot).to be false
     # inUseTables
     recs = mgr.inUseTables(recs[0].conId, recs[0].db)
     expect(mgr.stat()).to eq 0
     expect(recs.size()).to eq 2
+    #   connRecord::openNormal, connRecord::openReadOnly
+    #   connRecord::openEx, connRecord::openReadOnlyEx
+    expect(recs[0].name).to eq "test" # schema table
+    expect(recs[0].openNormal).to be true
+    expect(recs[0].openReadOnly).to be false
+    expect(recs[0].openEx).to be false
+    expect(recs[0].openReadOnlyEx).to be false
+    expect(recs[1].name).to eq "user" # opened as tb_other
+    expect(recs[1].openNormal).to be false
+    expect(recs[1].openReadOnly).to be true
+    expect(recs[1].openEx).to be false
+    expect(recs[1].openReadOnlyEx).to be false
     # tables, views
     recs = mgr.tables("test_v3")
     expect(mgr.stat()).to eq 0
@@ -1077,6 +1096,7 @@ describe Transactd, 'V3Features' do
     expect(mgr.stat()).to eq Transactd::ERROR_TD_HOSTNAME_NOT_FOUND
     mgr.disconnect()
     tb_other.close()
+    db_other.abortTrn
     db_other.close()
   end
   it 'fetch_mode' do

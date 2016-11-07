@@ -2383,13 +2383,6 @@ SWIG_AsVal_unsigned_SS_int (VALUE obj, unsigned int *val)
 }
 
 
-SWIGINTERNINLINE VALUE
-SWIG_From_char  (char c) 
-{ 
-  return SWIG_FromCharPtrAndSize(&c,1);
-}
-
-
 SWIGINTERN int
 SWIG_AsVal_char (VALUE obj, char *val)
 {    
@@ -7105,7 +7098,7 @@ SWIGINTERN VALUE _wrap_nstable_keyNum(int argc, VALUE *argv, VALUE self) {
   if (!check_param_count(argc, 0, 0)) return Qnil;
   nstable* arg1 = selfPtr(self, arg1);
   char_td result = arg1->keyNum();
-  return SWIG_From_char(static_cast< char >(result));
+  return SWIG_From_long(result);
 }
 
 
@@ -7870,7 +7863,7 @@ SWIGINTERN VALUE _wrap_nstable_mode(int argc, VALUE *argv, VALUE self) {
   if (!check_param_count(argc, 0, 0)) return Qnil;
   nstable* arg1 = selfPtr(self, arg1);
   char_td result = arg1->mode();
-  return SWIG_From_char(static_cast< char >(result));
+  return SWIG_From_long(result);
 }
 
 
@@ -8285,13 +8278,13 @@ SWIGINTERN VALUE
 _wrap_connRecord_inTransaction_get(int argc, VALUE *argv, VALUE self) {
   bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
   char result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
   result = (char) ((arg1)->inTransaction);
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  if (result != 0)
+    return Qtrue;
+  return Qfalse;
 fail:
   return Qnil;
 }
@@ -8301,13 +8294,13 @@ SWIGINTERN VALUE
 _wrap_connRecord_inSnapshot_get(int argc, VALUE *argv, VALUE self) {
   bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
   char result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
   result = (char) ((arg1)->inSnapshot);
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  if (result != 0)
+    return Qtrue;
+  return Qfalse;
 fail:
   return Qnil;
 }
@@ -8317,13 +8310,13 @@ SWIGINTERN VALUE
 _wrap_connRecord_openNormal_get(int argc, VALUE *argv, VALUE self) {
   bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
   char result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
   result = (char) ((arg1)->openNormal);
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  if (result != 0)
+    return Qtrue;
+  return Qfalse;
 fail:
   return Qnil;
 }
@@ -8333,12 +8326,13 @@ SWIGINTERN VALUE
 _wrap_connRecord_openReadOnly_get(int argc, VALUE *argv, VALUE self) {
   bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
   char result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
+  arg1 = selfPtr(self, arg1);
   result = (char) ((arg1)->openReadOnly);
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  if (result != 0)
+    return Qtrue;
+  return Qfalse;
 fail:
   return Qnil;
 }
@@ -8348,13 +8342,13 @@ SWIGINTERN VALUE
 _wrap_connRecord_openEx_get(int argc, VALUE *argv, VALUE self) {
   bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
   char result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
   result = (char) ((arg1)->openEx);
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  if (result != 0)
+    return Qtrue;
+  return Qfalse;
 fail:
   return Qnil;
 }
@@ -8364,13 +8358,13 @@ SWIGINTERN VALUE
 _wrap_connRecord_openReadOnlyEx_get(int argc, VALUE *argv, VALUE self) {
   bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
   char result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
   result = (char) ((arg1)->openReadOnlyEx);
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  if (result != 0)
+    return Qtrue;
+  return Qfalse;
 fail:
   return Qnil;
 }
@@ -10211,7 +10205,6 @@ SWIGINTERN VALUE
 _wrap_dbdef_mode(int argc, VALUE *argv, VALUE self) {
   tdap::client::dbdef *arg1 = (tdap::client::dbdef *) 0 ;
   char_td result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
@@ -10221,8 +10214,7 @@ _wrap_dbdef_mode(int argc, VALUE *argv, VALUE self) {
     } 
     CATCH_BZS_AND_STD()
   }
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  return SWIG_From_long(result);
 fail:
   return Qnil;
 }
@@ -16675,7 +16667,6 @@ SWIGINTERN VALUE
 _wrap_database_mode(int argc, VALUE *argv, VALUE self) {
   tdap::client::database *arg1 = (tdap::client::database *) 0 ;
   char_td result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
@@ -16685,8 +16676,7 @@ _wrap_database_mode(int argc, VALUE *argv, VALUE self) {
     } 
     CATCH_BZS_AND_STD()
   }
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  return SWIG_From_long(result);
 fail:
   return Qnil;
 }
@@ -17298,13 +17288,11 @@ SWIGINTERN VALUE
 _wrap_btrDate_dd_get(int argc, VALUE *argv, VALUE self) {
   tdap::btrDate *arg1 = (tdap::btrDate *) 0 ;
   char result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
   result = (char) ((arg1)->dd);
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  return SWIG_From_long(result);
 fail:
   return Qnil;
 }
@@ -17335,12 +17323,11 @@ SWIGINTERN VALUE
 _wrap_btrDate_mm_get(int argc, VALUE *argv, VALUE self) {
   tdap::btrDate *arg1 = (tdap::btrDate *) 0 ;
   char result;
-  VALUE vresult = Qnil;
+  
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
   result = (char) ((arg1)->mm);
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  return SWIG_From_long(result);
 fail:
   return Qnil;
 }
@@ -17488,13 +17475,11 @@ SWIGINTERN VALUE
 _wrap_btrTime_uu_get(int argc, VALUE *argv, VALUE self) {
   tdap::btrTime *arg1 = (tdap::btrTime *) 0 ;
   char result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
   result = (char) ((arg1)->uu);
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  return SWIG_From_long(result);
 fail:
   return Qnil;
 }
@@ -17525,13 +17510,11 @@ SWIGINTERN VALUE
 _wrap_btrTime_ss_get(int argc, VALUE *argv, VALUE self) {
   tdap::btrTime *arg1 = (tdap::btrTime *) 0 ;
   char result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
   result = (char) ((arg1)->ss);
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  return SWIG_From_long(result);
 fail:
   return Qnil;
 }
@@ -17562,13 +17545,11 @@ SWIGINTERN VALUE
 _wrap_btrTime_nn_get(int argc, VALUE *argv, VALUE self) {
   tdap::btrTime *arg1 = (tdap::btrTime *) 0 ;
   char result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
   result = (char) ((arg1)->nn);
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  return SWIG_From_long(result);
 fail:
   return Qnil;
 }
@@ -17599,13 +17580,11 @@ SWIGINTERN VALUE
 _wrap_btrTime_hh_get(int argc, VALUE *argv, VALUE self) {
   tdap::btrTime *arg1 = (tdap::btrTime *) 0 ;
   char result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
   result = (char) ((arg1)->hh);
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  return SWIG_From_long(result);
 fail:
   return Qnil;
 }
@@ -20335,7 +20314,6 @@ SWIGINTERN VALUE
 _wrap_connectParams_mode(int argc, VALUE *argv, VALUE self) {
   tdap::client::connectParams *arg1 = (tdap::client::connectParams *) 0 ;
   char_td result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
@@ -20345,8 +20323,7 @@ _wrap_connectParams_mode(int argc, VALUE *argv, VALUE self) {
     } 
     CATCH_BZS_AND_STD()
   }
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  return SWIG_From_long(result);
 fail:
   return Qnil;
 }
@@ -24716,7 +24693,6 @@ SWIGINTERN VALUE
 _wrap_pooledDbManager_mode(int argc, VALUE *argv, VALUE self) {
   tdap::client::pooledDbManager *arg1 = (tdap::client::pooledDbManager *) 0 ;
   char_td result;
-  VALUE vresult = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   arg1 = selfPtr(self, arg1);
@@ -24726,8 +24702,7 @@ _wrap_pooledDbManager_mode(int argc, VALUE *argv, VALUE self) {
     } 
     CATCH_BZS_AND_STD()
   }
-  vresult = SWIG_From_char(static_cast< char >(result));
-  return vresult;
+  return SWIG_From_long(result);
 fail:
   return Qnil;
 }
