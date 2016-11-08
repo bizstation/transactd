@@ -213,10 +213,15 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_UPDATE_PART:
             client_t->cleanup();
             return 0;
-        case TD_REC_DELETE:
+        
         case TD_CLEAR_OWNERNAME:
         case TD_AUTOMEKE_SCHEMA:
             client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
+            break;
+        case TD_REC_DELETE:
+            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
+            if (client_t->req().op > 100)
+                client_t->req().paramMask |= P_MASK_DATA | P_MASK_DATALEN;
             break;
         case TD_END_TRANSACTION:
         case TD_BEGIN_TRANSACTION:
@@ -250,7 +255,10 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_KEY_LE_KO:
         case TD_REC_DELLETEATKEY:
             client_t->req().paramMask = P_MASK_KEYNAVI;
-            if (op > 50)
+            // Send updateTimepstamp value when op = TD_REC_DELLETEATKEY + 100 
+            if (op == TD_REC_DELLETEATKEY && client_t->req().op > 100)
+                client_t->req().paramMask |= P_MASK_DATA;
+            else if (op > 50)
                 client_t->req().paramMask &= ~P_MASK_DATALEN;
             break;
         case TD_KEY_NEXT_MULTI:

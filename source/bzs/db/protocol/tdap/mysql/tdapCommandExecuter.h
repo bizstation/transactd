@@ -80,10 +80,10 @@ class dbExecuter : public engine::mysql::dbManager
     inline void doStepRead(request& req, int op, engine::mysql::rowLockMode* lock);
 
     inline void doInsert(request& req);
-    inline void doUpdate(request& req);
-    inline void doUpdateKey(request& req);
-    inline void doDelete(request& req);
-    inline void doDeleteKey(request& req);
+    inline void doUpdate(request& req, bool confrictCheck);
+    inline void doUpdateKey(request& req, bool confrictCheck);
+    inline void doDelete(request& req, bool confrictCheck);
+    inline void doDeleteKey(request& req, bool confrictCheck);
     inline void doInsertBulk(request& req);
     inline void doGetSchema(request& req, netsvc::server::netWriter* nw);
     inline void doStat(request& req);

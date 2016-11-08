@@ -197,6 +197,7 @@ var joinWhereFields = 2;
 
 var CMP_MODE_MYSQL_NULL = 1;
 var CMP_MODE_OLD_NULL = 0;
+var CMP_MODE_BINFD_DEFAULT_STR = 2;
 
 var clearNull = 0;
 var defaultNull = 1;
@@ -864,6 +865,47 @@ function testConnMgr(uri)
 }
 
 
+function testUTCC(db)
+{
+	var tb = db.OpenTable("user", OPEN_NORMAL);
+	checkEqual(db.Stat, 0, "OpenTable user"); 
+
+	var tb2 = db.OpenTable("user", OPEN_NORMAL);
+	checkEqual(db.Stat, 0, "OpenTable user"); 
+
+	db.beginTrn();
+	tb.seekFirst();
+	checkEqual(tb.Stat, 0, "seekFirst"); 
+
+	tb2.seekFirst();
+	checkEqual(tb2.Stat, 0, "seekFirst2"); 
+
+	tb2.SetFV(1, "ABC");
+	tb2.Update();
+	checkEqual(tb2.Stat, 0, "seekFirst2"); 
+	
+	checkEqual(tb.updateConflictCheck, false, "updateConflictCheck");
+	var ret = tb.SetUpdateConflictCheck(true);
+	checkEqual(ret, true, "SetUpdateConflictCheck");
+	checkEqual(tb.updateConflictCheck, true, "updateConflictCheck");
+	
+	tb.SetFV(1, "EFG");
+	tb.Update();
+	checkEqual(tb.Stat, STATUS_CHANGE_CONFLICT, "Update UTCC"); 
+	db.abortTrn();
+}
+
+
+function tesAlias(db)
+{
+	var tb = db.OpenTable("user", OPEN_NORMAL);
+	checkEqual(db.Stat, 0, "OpenTable user"); 
+	tb.setAlias("–¼‘O", "name");
+	tb.SetFV("name", "EFG");
+	checkEqual(tb.Stat, 0, "Alias");
+	tb.close();
+}
+
 /*--------------------------------------------------------------------------------*/
 function test(atu, ate, db)
 {
@@ -953,7 +995,7 @@ function test(atu, ate, db)
 	// getSqlStringForCreateTable
 	var sql = db.GetSqlStringForCreateTable("extention");
 	checkEqual(db.Stat, 0, "GetSqlStringForCreateTable");
-	checkEqual(sql, 'CREATE TABLE `extention` (`id` INT NOT NULL ,`comment` VARCHAR(60) binary NULL DEFAULT NULL,`bits` BIGINT NOT NULL , UNIQUE key0(`id`)) ENGINE=InnoDB default charset=cp932',
+	checkEqual(sql, 'CREATE TABLE `extention` (`id` INT NOT NULL ,`comment` VARCHAR(60) binary NULL DEFAULT NULL,`bits` BIGINT NOT NULL , PRIMARY KEY(`id`)) ENGINE=InnoDB default charset=cp932',
 		 "GetSqlStringForCreateTable");
 
 	// setValidationTarget(bool isMariadb, uchar_td srvMinorVersion)
@@ -1171,6 +1213,11 @@ function test(atu, ate, db)
 	// connMgr
 	testConnMgr(db.uri);
 	
+	// UTCC
+	testUTCC(db);
+	
+	//Alias
+	tesAlias(db);
 	//WScript.Echo(" -- End Test -- ");
 }
 /*--------------------------------------------------------------------------------*/

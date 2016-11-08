@@ -51,7 +51,7 @@ struct nstimpl
 {
     nstimpl()
         : bulkIns(NULL), refCount(1), percentage(0), bookmarkLen(0), tableid(0), mode(0),
-            shared(false), isOpen(false)
+            shared(false), isOpen(false), updateConflictCheck(false)
     {
         memset(posblk, 0 ,POS_BLOCK_SIZE);
         uri[0] = 0x00;
@@ -68,6 +68,7 @@ struct nstimpl
     char_td mode;
     bool shared;
     bool isOpen;
+    bool updateConflictCheck;
 };
 
 // -----------------------------------------------------------------
@@ -178,6 +179,11 @@ bulkInsert* nstable::bulkIns() const
 void nstable::setIsOpen(bool v)
 {
     m_impl->isOpen = v;
+}
+
+void nstable::setMode(char_td v)
+{
+    m_impl->mode = v;
 }
 
 bool nstable::isOpen() const
@@ -452,6 +458,17 @@ clean:
     m_pdata = data_bak;
 }
 
+bool nstable::setUpdateConflictCheck(bool v)
+{
+    m_impl->updateConflictCheck = v;
+    return getUpdateStampEnable();
+}
+
+bool nstable::updateConflictCheck() const
+{
+    return m_impl->updateConflictCheck;
+}
+
 void nstable::doUpdate(eUpdateType type)
 {
     int trnCount = nsdb()->enableTrn();
@@ -480,11 +497,11 @@ void nstable::doUpdate(eUpdateType type)
     else
         m_keylen = writeKeyData();
     m_datalen = getWriteImageLen();
-
-    if (m_impl->nsdb->isUseTransactd() && (type == changeInKey))
-        tdap(TD_REC_UPDATEATKEY);
-    else
-        tdap(TD_REC_UPDATE);
+    short op = (m_impl->nsdb->isUseTransactd() && (type == changeInKey)) ?
+                    TD_REC_UPDATEATKEY : TD_REC_UPDATE;
+    if (m_impl->updateConflictCheck) op += 100;
+        
+    tdap(op);
     m_keynum = keynum;
     onUpdateAfter(option);
 }
@@ -500,15 +517,26 @@ void nstable::doDel(bool inkey)
         return;
 
     m_datalen = m_buflen;
+    if (inkey && !isUniqeKey(m_keynum))
+    {
+        m_stat = STATUS_INVALID_KEYNUM;
+        return;
+    }
+    __int64 v = m_impl->updateConflictCheck ? getUpdateStampValue() : 0;
+    short op = v ? 100 : 0;
     if (m_impl->nsdb->isUseTransactd() && inkey)
     {
-        if (!isUniqeKey(m_keynum))
-        {
-            m_stat = STATUS_INVALID_KEYNUM;
-            return;
-        }
         m_keylen = writeKeyData();
-        tdap(TD_REC_DELLETEATKEY);
+        void* data_bak = m_pdata;
+        if (v)
+        {
+            m_datalen = sizeof(__int64);
+            m_pdata = &v;
+        }
+        op += TD_REC_DELLETEATKEY;
+        tdap(op);
+        m_pdata = data_bak;
+        m_datalen = m_buflen;
     }
     else
     {
@@ -516,10 +544,15 @@ void nstable::doDel(bool inkey)
         {
             m_keylen = writeKeyData();
             seek();
-            if (m_stat)
+            if (m_stat) return;
+            if (v && v != getUpdateStampValue())
+            {
+                m_stat = STATUS_CHANGE_CONFLICT;
                 return;
+            }
         }
-        tdap(TD_REC_DELETE);
+        op += TD_REC_DELETE;
+        tdap(op);
     }
 }
 

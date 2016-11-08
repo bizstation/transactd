@@ -146,13 +146,16 @@ memoryRecord::memoryRecord(const memoryRecord& r)
 {
 #ifdef JOIN_UNLIMIT
     m_memblock = r.m_memblock;
+    for (int i = 0; i < memBlockSize(); ++i)
+        m_memblock[i]->addref();
 #else
     m_memblockSize = r.m_memblockSize;
     for (int i = 0; i < m_memblockSize; ++i)
+    {
         m_memblock[i] = r.m_memblock[i];
-#endif
-    for (int i = 0; i < memBlockSize(); ++i)
         m_memblock[i]->addref();
+    }
+#endif
 
 }
 
@@ -166,10 +169,15 @@ memoryRecord& memoryRecord::operator=(const memoryRecord& r)
 {
      if (this != &r)
      {
-         m_fns = r.m_fns;
+         for (int i = 0; i < memBlockSize(); ++i)
+             m_memblock[i]->release();
+         fieldsBase::operator=(r);
+         //m_fns = r.m_fns;
          m_blockIndexCache = r.m_blockIndexCache;
 #ifdef JOIN_UNLIMIT
          m_memblock = r.m_memblock;
+#else
+         m_memblockSize = r.m_memblockSize;
 #endif
          for (int i = 0; i < memBlockSize(); ++i)
          {
@@ -178,7 +186,6 @@ memoryRecord& memoryRecord::operator=(const memoryRecord& r)
 #endif
              m_memblock[i]->addref();
          }
-
      }
      return *this;
 }
@@ -203,6 +210,8 @@ void memoryRecord::setRecordData(autoMemory* am, unsigned char* ptr,
 #ifdef JOIN_UNLIMIT
     m_memblock.push_back(am);
 #else
+    if (m_memblockSize == JOINLIMIT_PER_RECORD)
+        THROW_BZS_ERROR_WITH_MSG(_T("The number of Join limit has been exceeded."));
     m_memblock[m_memblockSize] = am;
     ++m_memblockSize;
 #endif
@@ -358,6 +367,7 @@ void writableRecord::del(bool KeysetAlrady, bool noSeek)
         if (m_tb->stat())
             nstable::throwError(_T("activeTable delete "), m_tb->stat());
     }
+    if (m_tb->updateConflictCheck()) copyToBuffer(m_tb);
     deleteRecord(m_tb);
 }
 
@@ -371,7 +381,7 @@ void writableRecord::update(bool KeysetAlrady, bool noSeek)
         if (m_tb->stat())
             nstable::throwError(_T("activeTable update "), m_tb->stat());
     }
-    copyToBuffer(m_tb, true /*only changed*/);
+    copyToBuffer(m_tb, !m_tb->updateConflictCheck() /*only changed*/);
     updateRecord(m_tb);
 }
 
@@ -380,7 +390,10 @@ void writableRecord::save()
     copyToBuffer(m_tb);
     m_tb->seek();
     if (m_tb->stat() == STATUS_NOT_FOUND_TI)
+    {
         insertRecord(m_tb);
+        copyFromBuffer(m_tb);
+    }
     else
     {
         copyToBuffer(m_tb);

@@ -66,6 +66,7 @@ protected:
     bzs::rtl::stringBuffer* strBufs() const;
     void blobPushBack(char* p);
     void blobClear();
+    void blobResize(size_t size);
 };
 
 /** @endcond */
@@ -100,13 +101,14 @@ class DLLLIB fielddefs : public fieldShare
 public:
     void clear();
     fielddefs* clone() const;
+    void addAliasName(int index, const _TCHAR* name);
     int indexByName(const std::_tstring& name) const;
     const fielddef& operator[](int index) const;
     const fielddef& operator[](const _TCHAR* name) const;
     const fielddef& operator[](const std::_tstring& name) const;
     bool checkIndex(int index) const;
     size_t size() const;
-    void addAllFileds(const tabledef* def);
+    void addAllFields(const tabledef* def);
     void addSelectedFields(const class table* tb);
     void release();
     static fielddefs* create();

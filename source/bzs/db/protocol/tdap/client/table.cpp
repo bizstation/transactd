@@ -175,6 +175,7 @@ class recordCache
     unsigned int m_len;
     unsigned int m_unpackLen;
     unsigned int m_rowCount;
+    unsigned int m_invalidRows;
     uchar_td* m_bookmark;
     uchar_td* m_ptr;
     uchar_td* m_tmpPtr;
@@ -192,6 +193,7 @@ public:
     {
         m_filter = NULL;
         m_row = 0;
+        m_invalidRows = 0;
         m_rowCount = 0;
         m_ptr = NULL;
         m_len = 0;
@@ -218,7 +220,7 @@ public:
         // blob pointer is allready point to next row
         if (m_hd)
         {
-            while (row - m_hd->curRow)
+            while (row - m_invalidRows - m_hd->curRow)
             {
                 for (int j = 0; j < m_hd->fieldCount; ++j)
                     m_hd->nextField = (blobField*)m_hd->nextField->next();
@@ -400,14 +402,16 @@ public:
 
         if ((m_len == 0) && m_filter->isSeeksMode() && fieldCount)
         {
-
+            ++m_invalidRows;
             m_seekMultiStat = STATUS_NOT_FOUND_TI;
+            m_tb->fields().setInvalidMemblock(0);
             memset(m_tmpPtr, 0, td->recordlen());
             return m_tmpPtr;
         }
         else
         {
             m_seekMultiStat = 0;
+            m_tb->fields().setInvalidMemblock(-1);
             if (m_filter->fieldSelected())
             {
                 int selNullbytes = m_filter->selectedNullbytes();
@@ -930,7 +934,7 @@ void table::btrvSeekMulti()
     int rowOffset = 0;
     for (int i = 0; i < (int)seeks.size(); ++i)
     {
-
+        memset(m_impl->keybuf, 0, MAX_KEYLEN);
         seeks[i].writeBuffer((uchar_td*)m_impl->keybuf, true, transactd);
         if (hasManyJoin)
         {
@@ -1083,6 +1087,7 @@ void table::find(eFindType type)
     {
         type = m_impl->filterPtr->direction();
         op =(type == findForword) ? TD_KEY_NEXT_MULTI : TD_KEY_PREV_MULTI;
+        m_impl->filterPtr->resetReaded();
         m_stat = 0;
     }
     else if (m_impl->filterPtr->isSeeksMode())
@@ -1294,6 +1299,7 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount,
 void table::clearBuffer(eNullReset resetType)
 {
     m_impl->rc->reset();
+    m_impl->fields.setInvalidMemblock(-1);
     m_pdata = m_impl->dataBak;
     tabledef* td = (*m_tableDef);
     if (td->isMysqlNullMode() && td->defaultImage)
@@ -1406,12 +1412,19 @@ bool table::onUpdateCheck(eUpdateType type)
         {
             if (isUseTransactd() == false)
             {
+                __int64 v = updateConflictCheck() ? getUpdateStampValue() : 0;
                 // backup update data
                 smartUpdate();
                 seek();
                 m_impl->smartUpDateFlag = false;
                 if (m_stat)
                     return false;
+                
+                if (v && v != getUpdateStampValue())
+                {
+                    m_stat = STATUS_CHANGE_CONFLICT;
+                    return false;
+                }
                 memcpy(m_pdata, m_impl->smartUpDate, m_datalen);
             }
         }
@@ -1450,6 +1463,27 @@ bool table::onDeleteCheck(bool inkey)
         }
     }
     return true;
+}
+
+bool table::getUpdateStampEnable() const 
+{
+    return (tableDef()->m_utimeFieldNum != 0xffff);
+}
+
+__int64 table::getUpdateStampValue() const
+{
+    const tabledef* td = tableDef();
+    if (td->m_utimeFieldNum != 0xffff)
+    {
+        void* p = fieldPtr(td->m_utimeFieldNum);
+        __int64 v = 0;
+        memcpy(&v, p, td->fieldDefs[td->m_utimeFieldNum].len);
+        return v;
+    }else
+        m_stat = STATUS_INVARID_FIELD_IDX;
+        /*else if(isUseTransactd() == false)
+        return getRecordHash();*/
+    return 0;
 }
 
 ushort_td table::doCommitBulkInsert(bool autoCommit)
@@ -1519,7 +1553,7 @@ void table::doInit(tabledef** Def, short fnum, bool /*regularDir*/, bool mysqlnu
     tabledef* td = *m_tableDef; 
 
     incTabledefRefCount(td, mysqlnull);
-    m_fddefs->addAllFileds(td);
+    m_fddefs->addAllFields(td);
     m_fddefs->cv()->setCodePage(mysql::codePage(td->charsetIndex));
     ushort_td len = td->recordlen();
     if (len == 0)
@@ -2028,7 +2062,7 @@ bool table::checkIndex(short index) const
     return true;
 }
 
-unsigned int table::getRecordHash()
+unsigned int table::getRecordHash() const
 {
     return hash((const char*)fieldPtr(0), datalen());
 }
@@ -2079,12 +2113,13 @@ bool table::setSeekValueField(int row)
     // Check uniqe key
     if (kd->segments[0].flags.bit0)
         return false;
-
+    
     const uchar_td* ptr = (const uchar_td*)keyValues[row].data;
     const uchar_td* data;
     ushort_td dataSize;
     if (ptr)
     {
+        fields().setInvalidMemblock(-1);
         for (int j = 0; j < kd->segmentCount; ++j)
         {
             short filedNum = kd->segments[j].fieldNum;
@@ -2100,6 +2135,7 @@ bool table::setSeekValueField(int row)
             else
                 setFV(filedNum, _T(""));
         }
+        fields().setInvalidMemblock(0);
     }
     else
         return false;
@@ -2110,17 +2146,24 @@ void table::keyValueDescription(_TCHAR* buf, int bufsize)
 {
 
     std::_tstring s;
-    if (stat() == STATUS_NOT_FOUND_TI)
+    short st = stat() ;
+    if (st == STATUS_NOT_FOUND_TI || st == 0)
     {
-
+        bool invalid = fields().isInvalidRecord();
+        fields().setInvalidMemblock(-1);
         for (int i = 0; i < tableDef()->keyDefs[(int)keyNum()].segmentCount; i++)
         {
             short fnum = tableDef()->keyDefs[(int)keyNum()].segments[i].fieldNum;
             s += std::_tstring(tableDef()->fieldDefs[fnum].name()) + _T(" = ") +
                  getFVstr(fnum) + _T("\n");
         }
+        if (invalid)
+        {
+            fields().setInvalidMemblock(0);
+            st = STATUS_NOT_FOUND_TI;
+        }
     }
-    else if (stat() == STATUS_DUPPLICATE_KEYVALUE)
+    else if (st == STATUS_DUPPLICATE_KEYVALUE)
     {
         _TCHAR tmp[50];
         for (int j = 0; j < tableDef()->keyCount; j++)
@@ -2137,7 +2180,7 @@ void table::keyValueDescription(_TCHAR* buf, int bufsize)
     }
 
     _stprintf_s(buf, bufsize, _T("table:%s\nstat:%d\n%s"),
-                tableDef()->tableName(), stat(), s.c_str());
+                tableDef()->tableName(), st, s.c_str());
 }
 
 short table::getCurProcFieldCount() const
@@ -2152,6 +2195,13 @@ short table::getCurProcFieldIndex(short index) const
     if (!m_impl->filterPtr || !m_impl->filterPtr->fieldSelected())
         return index;
     return m_impl->filterPtr->selectFieldIndexes()[index];
+}
+
+void table::setAlias(const _TCHAR* orign, const _TCHAR* alias)
+{
+    short index = fieldNumByName(orign);
+    if (index != -1)
+        const_cast<fielddefs*>(fields().fieldDefs())->addAliasName(index, alias);
 }
 
 //-------------------------------------------------------------------

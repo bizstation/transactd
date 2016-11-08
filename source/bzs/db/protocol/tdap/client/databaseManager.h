@@ -73,7 +73,7 @@ public:
         int index = findTable(name);
         if (index != -1)
             return m_tables[index];
-        table_ptr t = openTable(m_db, name);
+        table_ptr t = openTable(m_db, name, TD_OPEN_NORMAL);
         if (t)
             m_tables.push_back(t);
         return t;
@@ -190,7 +190,7 @@ public:
         int index = findTable(name);
         if (index != -1)
             return m_tables[index];
-        table_ptr t = openTable(m_db, name);
+        table_ptr t = openTable(m_db, name, TD_OPEN_NORMAL);
         if (t)
             m_tables.push_back(t);
         return t;

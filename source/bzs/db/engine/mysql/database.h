@@ -28,6 +28,8 @@
 #include <bzs/env/crosscompile.h>
 #include "fieldAccess.h"
 #include <bzs/db/IBlobBuffer.h>
+#include <bitset>
+#include <bzs/db/protocol/tdap/tdapRequest.h>
 
 class THD;
 struct TABLE;
@@ -270,16 +272,246 @@ public:
         return m_convNum = num; // If not found, a value as it is returned.
     }
 
-    char clientKeynum(char num)
+};
+
+class prepareHandler
+{
+    TABLE* m_table;
+    std::bitset<256> m_bts;
+    std::bitset<256> m_btsOld;
+    char m_keyNum;
+    bool m_keyRead;
+    bool m_changed;
+    bool m_wholeRow;
+    bool m_innodb;
+    bool m_lock;
+
+    void setInnodbFetchExtraCols(unsigned long v);
+
+    inline void setWholeRow(bool v)
     {
-        if (num < m_keyCount)
+        if (m_wholeRow != v)
         {
-            if (strstr(m_key[(int)num].name, "key"))
-                return m_key[(int)num].name[3] - '0';
+            m_wholeRow = v;
+            m_changed = true;
         }
-        return -1;
+    }
+
+    inline void setKeyRead(bool v)
+    {
+        if (v != m_keyRead)
+        {
+            m_keyRead = v;
+            m_changed = true;
+        }
+    }
+
+    #define MAX_KEY_SEGMENT 8
+    void makeKeyFieldBitmap(std::bitset<256>& bts, char keynum)
+    {
+        if (keynum >= 0)
+        {
+            const KEY* key = &m_table->key_info[(int)keynum];
+            if (key)
+            {
+                int sgi = 0;
+                int segments = std::min<uint>(MAX_KEY_SEGMENT,
+                    key->user_defined_key_parts);
+                while (sgi < segments)
+                {
+                    bts.set(key->key_part[sgi].field->field_index);
+                    ++sgi;
+                }
+            }
+        }
+    }
+
+    void makeKeyFieldBitmap(int keynum)
+    {
+        if (keynum >= 0)
+        {
+            const KEY* key = &m_table->key_info[(int)keynum];
+            if (key)
+            {
+                int sgi = 0;
+                int segments = std::min<uint>(MAX_KEY_SEGMENT, key->user_defined_key_parts);
+                while (sgi < segments)
+                {
+                    setReadBitmap(key->key_part[sgi].field->field_index);
+                    ++sgi;
+                }
+            }
+        }
+    }
+
+    bool isKeyFieldOnly()
+    {
+        std::bitset<256> bts;
+        makeKeyFieldBitmap(bts, m_keyNum);
+        makeKeyFieldBitmap(bts, m_table->s->primary_key);
+        //Compare bitmap
+        uint n = (uint)m_bts.count();
+        uint i = 0;
+        while (n)
+        {
+            if (m_bts[i] && !bts[i])
+                return false;
+            if (m_bts[i++]) --n;
+        }
+        return true;
+    }
+
+    /* @return keyonly */
+    bool setBits()
+    {
+        bool keyOnly = false;
+        if (!m_wholeRow)
+        {
+            if (m_btsOld != m_bts)
+            {
+                keyOnly = isKeyFieldOnly();
+                bitmap_clear_all(&m_table->tmp_set);
+                uint n = (uint)m_bts.count();
+                for (uint i = 0; i < n; ++i)
+                {
+                    if (m_bts[i])
+                        bitmap_set_bit(&m_table->tmp_set, i);
+                }
+                m_changed = true;
+            }else
+                keyOnly = m_keyRead;
+            
+            m_btsOld = m_bts;
+        }
+        else if (!m_btsOld.all())
+            m_btsOld.set(); // set all bits true
+            
+        return keyOnly;
+    }
+
+    void doChange()
+    {
+        int ret = m_table->file->ha_index_or_rnd_end();
+        assert(ret == 0);
+        m_table->file->extra(m_keyRead ? HA_EXTRA_KEYREAD : HA_EXTRA_NO_KEYREAD);
+        unsigned long fetch_col = m_wholeRow ? ROW_RETRIEVE_ALL_COLS : ROW_RETRIEVE_DEFAULT;
+        /* if key_read and ROW_RETRIEVE_ALL_COLS, fetch all key fields */
+        //if (m_keyRead)  fetch_col = ROW_RETRIEVE_ALL_COLS;
+        setInnodbFetchExtraCols(fetch_col);
+        if (m_wholeRow)
+        {
+            m_table->read_set = &m_table->s->all_set;
+            //m_table->write_set = &m_table->s->all_set;
+        }
+        else
+        {
+            m_table->read_set = &m_table->tmp_set;
+            //m_table->write_set = &m_table->tmp_set;
+        }
+        if (m_keyNum >= 0)
+            ret = m_table->file->ha_index_init(m_keyNum, true);
+        else
+            ret = m_table->file->ha_rnd_init(true);
+        assert(ret == 0);
+        m_changed = false;
+    }
+
+    bool isChengeLock()
+    {
+        if (m_lock != (m_table->reginfo.lock_type >= TL_WRITE))
+        {
+            m_lock = (m_table->reginfo.lock_type >= TL_WRITE);
+            if (m_lock)
+            {
+                m_wholeRow = true;
+                m_keyRead = false;
+            }
+            return true;
+        }
+        return false;
+    }
+public:
+    inline prepareHandler(TABLE* table) : m_table(table), m_keyNum(-1), m_keyRead(false), m_changed(true),
+        m_wholeRow(true), m_innodb(false), m_lock(false)
+    {
+        assert(table);
+        m_innodb = (strcmp(m_table->file->table_type(), "InnoDB") == 0);
+    }
+
+    void init(TABLE* table)
+    {
+        m_table = table;
+        assert(table);
+        m_keyNum = -1;
+        m_keyRead = false;
+        m_changed = true;
+        m_wholeRow = true;
+        m_innodb = (strcmp(m_table->file->table_type(), "InnoDB") == 0);
+        m_lock = false;
+    }
+
+    void setKeyNum(char v)
+    {
+        if (v != m_keyNum)
+        {
+            m_changed = true;
+            m_keyNum = v;
+        }
+    }
+
+    char keyNum() const { return m_keyNum; };
+
+    void makeCurrentKeyFieldBitmap()
+    {
+        if (m_keyNum >= 0)
+            makeKeyFieldBitmap(m_keyNum);
+    }
+
+    void makePrimaryKeyFieldBitmap()
+    {
+        makeKeyFieldBitmap(m_table->s->primary_key);
+    }
+    
+    inline void clearReadBitmap()
+    {
+        m_bts.reset();
+    }
+
+    inline void setReadBitmap(uint bit)
+    {
+        m_bts.set(bit);
+    }
+
+    inline void setReadBitmap(const std::bitset<256>& bits)
+    {
+        m_bts = bits;
+    }
+
+    inline const std::bitset<256>& getReadBitmap()
+    {
+        return m_bts;
+    }
+
+    inline bool isKeyRead() const { return m_keyRead; }
+
+    inline bool isWholeRow() const { return m_wholeRow; }
+
+    void ready(bool wholeRow = true, bool keyRead = false)
+    {
+        if (isChengeLock()) m_changed = true;
+        setWholeRow(wholeRow);
+        if (setBits())
+            setKeyRead(true); // force keyRead, Ignore function param
+        else
+            setKeyRead(keyRead);
+        if (m_changed) doChange();
     }
 };
+
+static const bool lock_mode = true;
+static const bool key_read = true;
+static const bool field_select = false;
+static const bool whole_row = false;
 
 class table : private boost::noncopyable
 {
@@ -308,12 +540,13 @@ class table : private boost::noncopyable
     IblobBuffer* m_blobBuffer;
     std::vector<Field*> m_noNullModeNullFieldList;
     std::vector<Field*> m_timeStampFields;
+    Field* m_updateAtField;
     unsigned int m_readCount;
     unsigned int m_updCount;
     unsigned int m_delCount;
     unsigned int m_insCount;
     ulong m_privilege;
-    char m_keyNum;
+    //char m_keyNum;
     unsigned char m_nullBytesCl;
     struct
     {
@@ -332,6 +565,7 @@ class table : private boost::noncopyable
         bool m_mysqlNull : 1;
         bool m_timestampAlways : 1;
     };
+    prepareHandler m_prepare;
 
     table(TABLE* table, database& db, const std::string& name, short mode,
           int id, bool mysqlnull);
@@ -355,7 +589,7 @@ class table : private boost::noncopyable
 
     inline uint keylen() const
     {
-        return m_table->key_info[(int)m_keyNum].key_length;
+        return m_table->key_info[(int)m_prepare.keyNum()].key_length;
     }
     void setKeyValues(const uchar* ptr, int size);
     void setBlobFieldPointer(const bzs::db::blobHeader* hd);
@@ -380,6 +614,8 @@ class table : private boost::noncopyable
     inline void unlockRow(bool noConsistent);
     inline void tryConsistentRead(bool noConsistent);
 
+
+
 #ifdef USE_HANDLERSOCKET
     std::vector<int> m_useFields;
     void checkFiledIndex(int index);
@@ -397,6 +633,9 @@ public:
     std::vector<IPrepare*> preparedStatements;
 
     ~table();
+
+    inline prepareHandler* getPrepareHandler() { return &m_prepare; }
+
 
     inline void checkACL(enum_sql_command cmd);
 
@@ -484,11 +723,11 @@ public:
         m_db.closeTable(this);
     }
 
-    inline char keyNum() const { return m_keyNum; }
+    inline char keyNum() const { return m_prepare.keyNum(); }
 
     inline bool isUniqueKey()
     {
-        return (m_table->key_info[(int)m_keyNum].flags & HA_NOSAME);
+        return (m_table->key_info[keyNum()].flags & HA_NOSAME);
     }
 
     /*
@@ -507,19 +746,24 @@ public:
         return ((num >= 0) && (num < (short)m_table->s->keys));
     }
 
-    bool setKeyNum(char num, bool sorted = true);
+    bool setKeyNum(char num, bool wholeRow = true, bool keyRead = false);
 
-    inline void setKeyNum(const char* name, bool sorted = true)
+    bool setKeyNumForMultiRead(char num);
+
+    inline void setKeyNum(const char* name, bool wholeRow = true, bool keyRead = false)
     {
-        setKeyNum(keynumByName(name), sorted);
+        setKeyNum(keynumByName(name), wholeRow, keyRead);
     }
+
+    bool setNonKey(bool wholeRow = true, bool keyRead = false);
+
     bool isNisKey(char num) const;
 
     inline key_part_map keymap()
     {
-        return (1U << m_table->key_info[(int)m_keyNum].user_defined_key_parts) - 1;
+        assert(keynumCheck(keyNum()));
+        return (1U << m_table->key_info[(int)keyNum()].user_defined_key_parts) - 1;
     }
-    bool setNonKey(bool scan = false);
     unsigned long long tableFlags() const { return m_table->file->ha_table_flags();}
     void seekKey(enum ha_rkey_function find_flag, key_part_map keyMap);
     void getNextSame(key_part_map keyMap);
@@ -553,16 +797,12 @@ public:
     inline void stepNextExt(IReadRecordsHandler* handler, bool includeCurrent,
                             bool noBookmark)
     {
-        if (m_table->file->inited != handler::RND)
-            setNonKey(true);
         readRecords(handler, includeCurrent, READ_RECORD_STEPNEXT, noBookmark);
     }
 
     inline void stepPrevExt(IReadRecordsHandler* handler, bool includeCurrent,
                             bool noBookmark)
     {
-        if (m_table->file->inited != handler::RND)
-            setNonKey(true);
         readRecords(handler, includeCurrent, READ_RECORD_STEPPREV, noBookmark);
     }
 
@@ -571,25 +811,24 @@ public:
     inline void clearKeybuf() { memset(&m_keybuf[0], 0x00, MAX_KEYLEN); }
 
     __int64 insert(bool ncc);
-    void update(bool ncc);
-    void updateDirectkey();
-    void beginUpdate(char keyNum);
-    void del();
-    void beginDel();
-
+    double beginDel(int confrictCheck);
+    double beginUpdate(char keyNum, int confrictCheck);//return value of update_at 
+    void update(bool ncc, double updateAtBefore);
+    void del(double updateAtBefore);
+    void setUpdateTimeValue(void* data);    
     int keynumByName(const char* name) const;
 
     inline int stat() { return m_stat; }
+
     short setKeyValuesPacked(const uchar* ptr, int size);
     void* record() const;
-
     uint keyPackCopy(uchar* ptr);
-
-    void setRecord(void* ptr, unsigned short size, int offset = 0);
+    void setRecord(void* ptr, unsigned short size, int offset = 0, 
+                             bzs::db::protocol::tdap::autoIncPackInfo* ai = NULL);
     void setRecordFromPacked(const uchar* packedPtr, uint size,
-                             const bzs::db::blobHeader* hd);
+                             const bzs::db::blobHeader* hd, 
+                             bzs::db::protocol::tdap::autoIncPackInfo* ai);
     uint recordPackCopy(char* buf, uint maxsize = 0);
-
     ushort fieldPackCopy(unsigned char* nullPtr, int& nullbit, unsigned char* dest, short fieldNum);
 
     inline uint fieldSizeByte(int fieldNum)
@@ -695,16 +934,16 @@ public:
         return m_blobBuffer->fieldCount();
     }
 
-    inline void indexInit()
+    /*inline void rebuiltInnodbPrebuilt()
     {
         int ret = m_table->file->ha_index_or_rnd_end();
         assert(ret == 0);
-        if (m_keyNum >= 0)
-            ret = m_table->file->ha_index_init(m_keyNum, true);
+        if (keyNum() >= 0)
+            ret = m_table->file->ha_index_init(keyNum(), true);
         else
             ret = m_table->file->ha_rnd_init(true);
         assert(ret == 0);
-    }
+    }*/
 
     inline void setRowLock(rowLockMode* lck)
     {
@@ -754,12 +993,13 @@ public:
             m_validCursor = false;
         }
     }
+
     void setKeyValues(const std::vector<std::string>& values, int keypart,
                     const std::string* inValue = NULL);
 
     unsigned int writeDefaultImage(unsigned char* p, size_t size);
 
-    unsigned int writeSchemaImage(unsigned char* p, size_t size);
+    unsigned int writeSchemaImage(unsigned char* p, size_t size, bool bin_str);
 
 
     void restoreRecord() { restore_record(m_table, s->default_values);}
@@ -777,80 +1017,11 @@ public:
     void getCreateSql(String* s);
 
     void setValue(int index, const std::string& v, int type);
+
+    //void setInnodbFetchExtraCols(unsigned long v);
 };
 
-class fieldBitmap
-{
-    TABLE* m_table;
-    bool m_keyRead;
 
-public:
-    inline fieldBitmap(TABLE* table) : m_table(table), m_keyRead(false)
-    {
-        m_table->read_set = &m_table->tmp_set;
-        m_table->write_set = &m_table->tmp_set;
-        bitmap_clear_all(m_table->read_set);
-    }
-
-    inline fieldBitmap() : m_table(NULL), m_keyRead(false) {}
-
-    inline void setTable(table* tb)
-    {
-        if (tb)
-        {
-            m_table = tb->internalTable();
-            m_table->read_set = &m_table->tmp_set;
-            m_table->write_set = &m_table->tmp_set;
-            bitmap_clear_all(m_table->read_set);
-        }
-        else if (m_table)
-        {
-            if (m_keyRead)
-                m_table->file->extra(HA_EXTRA_NO_KEYREAD);
-            m_table->read_set = &m_table->s->all_set;
-            m_table->write_set = &m_table->s->all_set;
-            m_table = NULL;
-        }
-    }
-
-    inline ~fieldBitmap()
-    {
-        if (m_table)
-        {
-            if (m_keyRead)
-                m_table->file->extra(HA_EXTRA_NO_KEYREAD);
-            m_table->read_set = &m_table->s->all_set;
-            m_table->write_set = &m_table->s->all_set;
-        }
-    }
-
-    inline void setKeyRead(bool v)
-    {
-        assert(m_table);
-        if (v)
-            m_table->file->extra(HA_EXTRA_KEYREAD);
-        else if (m_keyRead)
-            m_table->file->extra(HA_EXTRA_NO_KEYREAD);
-        m_keyRead = v;
-    }
-
-    inline void setReadBitmap(uint bit)
-    {
-        assert(m_table);
-        bitmap_set_bit(m_table->read_set, bit);
-    }
-
-       
-    inline MY_BITMAP* getReadBitmap()
-    {
-        if (m_table)
-            return m_table->read_set;
-        return NULL;
-    }
-
-    inline bool isUsing() const { return (m_table != NULL); }
-
-};
 
 // smart wrapper for exception
 class smartBulkInsert

@@ -99,6 +99,7 @@ protected:
     const _TCHAR* uri() const;
     const uchar_td* posblk() const;
     void setIsOpen(bool v);
+    void setMode(char_td v); //For dbdef in noschema mode.
 
     bulkInsert* bulkIns() const;
     virtual bool isUniqeKey(char_td keynum)
@@ -132,6 +133,8 @@ protected:
     virtual short_td doBtrvErr(HWND hWnd, _TCHAR* retbuf);
     virtual ushort_td doCommitBulkInsert(bool autoCommit);
     virtual void doAbortBulkInsert();
+    virtual __int64 getUpdateStampValue() const {return 0;}
+    virtual bool getUpdateStampEnable() const {return false;}
     inline void open(const _TCHAR* uri, char_td mode = 0,
                      const _TCHAR* ownerName = NULL)
     {
@@ -229,6 +232,8 @@ public:
     void unlock();
     char_td mode() const;
     void setTimestampMode(int mode);
+    bool setUpdateConflictCheck(bool v);
+    bool updateConflictCheck() const;
     static _TCHAR* getFileName(const _TCHAR* uri, _TCHAR* retbuf);
     static short_td tdapErr(HWND hWnd, short_td status,
                             const _TCHAR* tableName = NULL,

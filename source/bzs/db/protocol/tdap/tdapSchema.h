@@ -1069,6 +1069,7 @@ struct PACKAGE tabledef
     {
         memset(this, 0, sizeof(tabledef));
         formatVersion = FORMAT_VERSON_CURRENT;
+        m_utimeFieldNum = -1;
         primaryKeyNum = -1;
         parentKeyNum = -1;
         replicaKeyNum = -1;
@@ -1084,6 +1085,7 @@ struct PACKAGE tabledef
     const wchar_t* tableName() const; // table name
     void setFileName(const wchar_t* s);
     void setTableName(const wchar_t* s);
+    void convertToUtf8Schema();
 private:
     const char* toChar(char* buf, const wchar_t* s, int size) const;
 #else
@@ -1107,6 +1109,7 @@ private:
     const char* tableName() const;
     void setFileName(const char* s);
     void setTableName(const char* s);
+    void convertToUtf8Schema();
 private:
     const char* toChar(char* buf, const char* s, int size) const;
 #endif // MYSQL_DYNAMIC_PLUGIN
@@ -1229,7 +1232,8 @@ private:
     bool m_useInMariadb  ;    // use in mariadb
     uchar_td m_srvMajorVer;   // server major version;
     uchar_td m_srvMinorVer;   // server minor version;
-    uchar_td m_filler0[10];   // reserved
+    ushort_td m_utimeFieldNum; // uodate timestamp field number
+    uchar_td m_filler0[8];    // reserved
 public:
     FLAGS flags; // file flags
     uchar_td primaryKeyNum; // Primary key number. -1 is no primary.

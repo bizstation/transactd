@@ -927,8 +927,8 @@ inline judgeFunc getJudgeFunc(eCompType log)
     case eLess: 
         return isMatch3;
     case eNotEq: 
-        return isMatch4;
     case eNotBitAnd:
+        return isMatch4;
     case eGreaterEq:
         return isMatch5;
     case eLessEq: 

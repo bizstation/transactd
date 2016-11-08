@@ -43,7 +43,7 @@ namespace tdap
 namespace mysql
 {
 
-schemaBuilder::schemaBuilder(void): m_stat(0)
+schemaBuilder::schemaBuilder(unsigned char binFdCharset): m_stat(0), m_binFdCharset(binFdCharset)
 {
 }
 
@@ -175,7 +175,7 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
     td.keyCount = (uchar_td)src->keys();
     td.charsetIndex = charsetIndex(src->charset().csname);
     td.primaryKeyNum =
-        (src->primarykeyNum() < td.keyCount) ? kc.clientKeynum(src->primarykeyNum()) : -1;
+        (src->primarykeyNum() < td.keyCount) ? kc.keyNumByMakeOrder(src->primarykeyNum()) : -1;
 #ifdef USE_BTRV_VARIABLE_LEN
     td.flags.bit0 = (src->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN);
     if (src->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN)
@@ -232,6 +232,9 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
             fd.setPadCharSettings(false, true);
             if (f->has_charset())
                 fd.setCharsetIndex(charsetIndex(f->charset()->csname));
+            else if (fd.type == ft_string || fd.type == ft_lstring
+                || fd.type == ft_myvarbinary || fd.type == ft_myblob)
+                fd.setCharsetIndex(m_binFdCharset);
 
             if ((fd.type == ft_mydatetime || fd.type == ft_mytimestamp) && (f->val_real() == 0))
             {// No constant value
@@ -342,7 +345,7 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id, bool nouse
     
     tabledef* td = getTabledef(src, id, nouseNullkey, rec.get(), 65000);
     mtb->clearBuffer();
-    mtb->setRecordFromPacked(rec.get(), td->varSize + 4, NULL);
+    mtb->setRecordFromPacked(rec.get(), td->varSize + 4, NULL, NULL);
     mtb->insert(true);
     return mtb->stat();
 }
@@ -393,12 +396,15 @@ table* getTable(database* db, const char *name)
 void schemaBuilder::listTable(database* db, std::vector<std::string>& tables, int type)
 {
     char path[FN_REFLEN + 1];
+    tables.clear();
     build_table_filename(path, sizeof(path) - 1, db->name().c_str(), "", "", 0);
     std::string s = path;
     fs::path p = s;
+    if (exists(p) == false) return;
+
     fs::directory_iterator it(p);
     fs::directory_iterator end;
-    tables.clear();
+    
 
     for (fs::directory_iterator it(p); it != end; ++it)
     {
@@ -456,6 +462,7 @@ short schemaBuilder::execute(database* db, table* mtb, bool nouseNullkey)
 
     std::string s = path;
     fs::path p = s;
+    if (exists(p) == false) return STATUS_TABLE_NOTOPEN;
     fs::directory_iterator it(p);
     fs::directory_iterator end;
     int id = 0;

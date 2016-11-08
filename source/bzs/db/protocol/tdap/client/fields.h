@@ -126,6 +126,8 @@ class fieldsBase : public refarymem
     friend class recordsetImple;           // setRecordData  setFielddefs
     friend class recordsetQuery;           // setRecordData
     friend class groupQueryImple;          // setInvalidMemblock
+    friend class recordCache;              // setInvalidMemblock
+    friend class table;                    // setInvalidMemblock
 
     virtual unsigned char* ptr(int index) const = 0;
     virtual unsigned char* nullPtr(int index) const = 0;
@@ -169,8 +171,13 @@ protected:
 
     inline void setInvalidMemblock(short index) 
     { 
-        int num = memoryBlockIndex(index);
-        m_InvalidFlags |= ((2L << num) | 1L);  
+        if (index == -1)
+            m_InvalidFlags = 0;
+        else
+        {
+            int num = memoryBlockIndex(index);
+            m_InvalidFlags |= ((2L << num) | 1L); 
+        }
     }
 
     /** @endcond */

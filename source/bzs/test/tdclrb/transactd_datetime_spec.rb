@@ -20,6 +20,14 @@
 =end
 require 'transactd'
 
+def hhnnssuu2i(hh, nn, ss, uu)
+  uu + ss * 256 + nn * 256**2 + hh * 256**3
+end
+
+def yymmdd2i(yy, mm, dd)
+  dd + mm * 256 + yy * 256**2
+end
+
 describe Transactd, 'datetime' do
   it 'get BtrDate' do
     i_nowdate = Transactd::getNowDate() # get today as integer
@@ -28,8 +36,8 @@ describe Transactd, 'datetime' do
     #p i_nowdate
     #p s_i_nowdate + ' ' + s_i_nowdate.encoding.to_s
     #p s_i_nowdate2 + ' ' + s_i_nowdate2.encoding.to_s
-    nowdate = Transactd::BtrDate.new()
-    nowdate.i = i_nowdate               # get today as BtrDate
+    nowdate = Transactd::BtrDate.new()  # get today as BtrDate
+    nowdate.i = i_nowdate
     s_nowdate  = Transactd::btrdtoa(nowdate)
     s_nowdate2 = Transactd::btrdtoa(nowdate, true)
     #p nowdate
@@ -37,6 +45,19 @@ describe Transactd, 'datetime' do
     #p s_nowdate2 + ' ' + s_nowdate2.encoding.to_s
     expect(s_i_nowdate).to eq s_nowdate
     expect(s_i_nowdate2).to eq s_nowdate2
+    expect(nowdate.yy.class).to eq Fixnum
+    expect(nowdate.mm.class).to eq Fixnum
+    expect(nowdate.dd.class).to eq Fixnum
+    expect("#{format('%04d', nowdate.yy)}/#{format('%02d', nowdate.mm)}/#{format('%02d', nowdate.dd)}").to eq s_nowdate
+    expect("#{format('%04d', nowdate.yy)}-#{format('%02d', nowdate.mm)}-#{format('%02d', nowdate.dd)}").to eq s_nowdate2
+    expect(i_nowdate).to eq yymmdd2i(nowdate.yy, nowdate.mm, nowdate.dd)
+    nowdate.yy = 2014
+    nowdate.mm = 8
+    nowdate.dd = 15
+    expect(nowdate.yy).to eq 2014
+    expect(nowdate.mm).to eq 8
+    expect(nowdate.dd).to eq 15
+    expect(nowdate.i).to eq yymmdd2i(2014, 8, 15)
   end
   
   it 'get BtrTime' do
@@ -44,12 +65,27 @@ describe Transactd, 'datetime' do
     s_i_nowtime  = Transactd::btrttoa(i_nowtime)
     #p i_nowtime
     #p s_i_nowtime + ' ' + s_i_nowtime.encoding.to_s
-    nowtime = Transactd::BtrTime.new()
-    nowtime.i = i_nowtime                 # get now time as BtrTime
+    nowtime = Transactd::BtrTime.new()    # get now time as BtrTime
+    nowtime.i = i_nowtime
     s_nowtime  = Transactd::btrttoa(nowtime)
     #p nowtime
     #p s_nowtime + ' ' + s_nowtime.encoding.to_s
     expect(s_i_nowtime).to eq s_nowtime
+    expect(nowtime.hh.class).to eq Fixnum
+    expect(nowtime.nn.class).to eq Fixnum
+    expect(nowtime.ss.class).to eq Fixnum
+    expect(nowtime.uu.class).to eq Fixnum
+    expect("#{format('%02d', nowtime.hh)}:#{format('%02d', nowtime.nn)}:#{format('%02d', nowtime.ss)}").to eq s_nowtime
+    expect(i_nowtime).to eq hhnnssuu2i(nowtime.hh, nowtime.nn, nowtime.ss, nowtime.uu)
+    nowtime.hh = 1
+    nowtime.nn = 2
+    nowtime.ss = 31
+    nowtime.uu = 32
+    expect(nowtime.hh).to eq 1
+    expect(nowtime.nn).to eq 2
+    expect(nowtime.ss).to eq 31
+    expect(nowtime.uu).to eq 32
+    expect(nowtime.i).to eq hhnnssuu2i(1, 2, 31, 32)
   end
   
   it 'get BtrDateTime' do

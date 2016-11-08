@@ -436,9 +436,8 @@ std::string& sqlBuilder::getKey(const tabledef* td, std::vector<std::string>& fd
         _ltoa_s(key.keyNumber, buf, 20, 10);     
     else
         _ltoa_s(index, buf, 20, 10);
-    if ((td->primaryKeyNum == index) &&
-        (fdl[key.segments[0].fieldNum] == "auto_id_field"))
-        s += " PRIMARY KEY ";
+    if (td->primaryKeyNum == index)
+        s += " PRIMARY KEY";
     else
     {
         if (key.segments[0].flags.bit0 == false)

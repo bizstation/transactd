@@ -609,6 +609,7 @@ inline void appenDbList(connection::records& recs, LEX_STRING* db_name)
     connection::record& rec = recs[recs.size() - 1];
     strncpy(rec.name, db_name->str, 64);
     rec.name[64] = 0x00;
+    rec.type = 1;
 }
 
 void readDbList(THD* thd, connection::records& recs)

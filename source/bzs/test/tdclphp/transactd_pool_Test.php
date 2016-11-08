@@ -1,6 +1,6 @@
 <?php
 /* ================================================================
-   Copyright (C) 2014 BizStation Corp All rights reserved.
+   Copyright (C) 2014,2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -17,12 +17,16 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
    02111-1307, USA.
 ================================================================ */
-mb_internal_encoding('UTF-8');
 
-require_once("transactd.php");
-use BizStation\Transactd as Bz;
-Bz\transactd::setRecordValueMode(Bz\transactd::RECORD_KEYVALUE_FIELDVALUE);
+require("transactd.php");
 
+use BizStation\Transactd\Transactd;
+use BizStation\Transactd\PooledDbManager;
+use BizStation\Transactd\ConnectParams;
+use BizStation\Transactd\Query;
+use BizStation\Transactd\ActiveTable;
+
+Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_VALUE);
 
 function getHost()
 {
@@ -59,7 +63,7 @@ if(class_exists('Thread')){
         public function run()
         {
             //echo ('... waiting to get ' . $this->name . " ...\n");
-            $dbm = new Bz\pooledDbManager(new Bz\connectParams($this->url));
+            $dbm = new PooledDbManager(new ConnectParams($this->url));
             //echo ('GOT ' . $this->name . ' !  sleep ' . $this->sleep . "sec ...\n");
             sleep($this->sleep);
             $dbm->unUse();
@@ -68,30 +72,30 @@ if(class_exists('Thread')){
     }
 }
 
-class transactdPoolTest extends PHPUnit_Framework_TestCase
+class TransactdPoolTest extends PHPUnit_Framework_TestCase
 {
     public function testConnectParams()
     {
-        $cp = new Bz\connectParams(URL);
+        $cp = new ConnectParams(URL);
         $this->assertEquals($cp->uri(), URL);
-        $cp = new Bz\connectParams(PROTOCOL, HOSTNAME, DBNAME, SCHEMANAME, USERNAME, PASSWORD);
+        $cp = new ConnectParams(PROTOCOL, HOSTNAME, DBNAME, SCHEMANAME, USERNAME, PASSWORD);
         $this->assertEquals($cp->uri(), URL);
     }
     public function testUse()
     {
-        Bz\pooledDbManager::setMaxConnections(3);
-        $cp = new Bz\connectParams(URL);
+        PooledDbManager::setMaxConnections(3);
+        $cp = new ConnectParams(URL);
         $this->assertEquals($cp->uri(), URL);
-        $dbm1 = new Bz\pooledDbManager($cp);
-        $dbm2 = new Bz\pooledDbManager($cp);
-        $dbm3 = new Bz\pooledDbManager($cp);
+        $dbm1 = new PooledDbManager($cp);
+        $dbm2 = new PooledDbManager($cp);
+        $dbm3 = new PooledDbManager($cp);
         $dbm1->unUse();
-        $dbm4 = new Bz\pooledDbManager($cp);
+        $dbm4 = new PooledDbManager($cp);
         $dbm3->unUse();
-        $dbm5 = new Bz\pooledDbManager($cp);
-        Bz\pooledDbManager::setMaxConnections(5);
-        $dbm1 = new Bz\pooledDbManager($cp);
-        $dbm3 = new Bz\pooledDbManager($cp);
+        $dbm5 = new PooledDbManager($cp);
+        PooledDbManager::setMaxConnections(5);
+        $dbm1 = new PooledDbManager($cp);
+        $dbm3 = new PooledDbManager($cp);
         $dbm1->unUse();
         $dbm2->unUse();
         $dbm3->unUse();
@@ -100,12 +104,12 @@ class transactdPoolTest extends PHPUnit_Framework_TestCase
     }
     public function testConnect()
     {
-        Bz\pooledDbManager::setMaxConnections(3);
-        $cp = new Bz\connectParams(URL);
+        PooledDbManager::setMaxConnections(3);
+        $cp = new ConnectParams(URL);
         $this->assertEquals($cp->uri(), URL);
-        $dbm = new Bz\pooledDbManager($cp);
-        $atu = new Bz\ActiveTable($dbm, 'user');
-        $q = new Bz\query();
+        $dbm = new PooledDbManager($cp);
+        $atu = new ActiveTable($dbm, 'user');
+        $q = new Query();
         $atu->alias('名前', 'name');
         $q->select('id', 'name', 'group')->where('id', '<=', 15000);
         $rs = $atu->index(0)->keyValue(1)->read($q);
@@ -123,7 +127,7 @@ class transactdPoolTest extends PHPUnit_Framework_TestCase
             echo(' * class Thread not found! * ');
             return;
         }
-        Bz\pooledDbManager::setMaxConnections(5);
+        PooledDbManager::setMaxConnections(5);
         $t = array();
         for ($i = 1; $i <= 12; $i++)
         {

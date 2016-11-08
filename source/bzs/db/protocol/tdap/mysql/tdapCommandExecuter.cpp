@@ -194,7 +194,7 @@ void dumpStdErr(int op, request& req, table* tb)
     sprintf_s(msg.get(), 1024,
               "[Transactd] Exception:op=%d Handle=%d tablename=%s datalen=%d"
               " keynum=%d keylen=%d \n",
-              op, req.pbk->handle, tb ? tb->name().c_str() : "", *req.datalen,
+              op, req.pbk ? req.pbk->handle : -1, tb ? tb->name().c_str() : "", *req.datalen,
               req.keyNum, req.keylen);
     sql_print_error("%s", msg.get());
     // dump Keybuf
@@ -505,6 +505,7 @@ inline bool dbExecuter::doOpenTable(request& req, char* buf, bool reconnect)
         if (getschema)
             mode -= TD_OPEN_MASK_GETSHCHEMA; 
         bool getDefaultImage = IS_MODE_GETDEFAULTIMAGE(mode);
+        bool bin_str = IS_MODE_BIN_STR(mode);
         if (getDefaultImage)
             mode -= TD_OPEN_MASK_GETDEFAULTIMAGE; 
         table* tb = NULL;
@@ -574,7 +575,7 @@ inline bool dbExecuter::doOpenTable(request& req, char* buf, bool reconnect)
                     if (getschema)
                     {
                         p += len;
-                        len = m_tb->writeSchemaImage(p , *req.datalen - req.resultLen);
+                        len = m_tb->writeSchemaImage(p , *req.datalen - req.resultLen, bin_str);
                         if (len == sizeof(ushort_td))
                         {
                             req.result = STATUS_BUFFERTOOSMALL;
@@ -688,32 +689,19 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
     int ret = 1;
     m_tb = getTable(req.pbk->handle);
     char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
-    if (keynum == -1 && (op == TD_KEY_GE_NEXT_MULTI))
-    {
-        m_tb->setNonKey(true);
-        op = TD_POS_NEXT_MULTI;
-    }
-    else
-    {
-        if (!m_tb->setKeyNum(keynum))
-        {
-            req.result = m_tb->stat();
-            return ret;
-        }
-
-        m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
-        m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT
-                                                    : HA_READ_KEY_OR_PREV,
-                        m_tb->keymap());
-    }
-
+    if (keynum < 0) keynum = -2;
     extRequest* ereq = (extRequest*)req.data;
     bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0;
     bool execPrepared = (ereq->itype & FILTER_TYPE_SUPPLYVALUE) != 0;
+    if (!m_tb->setKeyNumForMultiRead(keynum))
+    {
+        req.result = m_tb->stat();
+        return ret;
+    }
+
     // smartReadRecordsHandler scope
     {
         smartReadRecordsHandler srrh(m_readHandler);
-
         if (execPrepared)
         {
             if (m_tb->preparedStatements.size() < ereq->preparedId)
@@ -729,6 +717,20 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
                                             noBookmark);
         if (req.result != 0)
             return ret;
+        if (keynum < 0)
+        {
+            if (op == TD_KEY_GE_NEXT_MULTI)
+                op = TD_POS_NEXT_MULTI;
+            else if (op == TD_KEY_LE_PREV_MULTI)
+                op = TD_POS_PREV_MULTI;
+        }
+        else
+        {
+            m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
+            m_tb->seekKey(
+                (op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT : HA_READ_KEY_OR_PREV,
+                m_tb->keymap());
+        }
         if (m_tb->stat() == 0)
         {
             if (op == TD_KEY_GE_NEXT_MULTI)
@@ -778,7 +780,16 @@ inline int dbExecuter::doReadMulti(request& req, int op,
     if (op == TD_KEY_SEEK_MULTI && !(ereq->itype & FILTER_TYPE_SEEKS_BOOKMARKS))
     {
         char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
-        if (!m_tb->setKeyNum(keynum))
+        if (keynum < 0)
+        {
+            if (op != TD_POS_NEXT_MULTI && op != TD_POS_PREV_MULTI)
+            {
+                req.result = STATUS_INVALID_KEYNUM;
+                return ret;
+            }
+            keynum = -2;
+        }
+        if (!m_tb->setKeyNumForMultiRead(keynum))
         {
             req.result = m_tb->stat();
             return ret;
@@ -994,26 +1005,29 @@ inline void dbExecuter::doInsert(request& req)
         }
     }
     m_tb->clearBuffer();
+    autoIncPackInfo ai;
     m_tb->setRecordFromPacked((const uchar*)req.data, *(req.datalen),
-                              req.blobHeader);
-    __int64 aincValue = m_tb->insert(ncc);
+                              req.blobHeader, &ai);
+    ai.value = m_tb->insert(ncc);
     req.result = errorCodeSht(m_tb->stat());
     if (m_tb->stat() == 0)
     {
-        if (aincValue)
+        if (ai.value && ai.len && *req.datalen >= ai.len)
         {
-            req.paramMask = P_MASK_INS_AUTOINC;
-            req.data = m_tb->record();
+            req.paramMask = P_MASK_DB_AINC_VAL | P_MASK_POSBLK | P_MASK_KEYBUF;
+            memcpy(req.datalen, &ai, sizeof(autoIncPackInfo));
         }
         else
             req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
-    }
+    }else
+        req.paramMask = 0;
     if (!m_tb->cursor())
         req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
-inline void dbExecuter::doUpdateKey(request& req)
+inline void dbExecuter::doUpdateKey(request& req, bool confrictCheck)
 {
+
     m_tb = getTable(req.pbk->handle, SQLCOM_UPDATE);
     char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
     if (m_tb->setKeyNum(keynum))
@@ -1022,12 +1036,12 @@ inline void dbExecuter::doUpdateKey(request& req)
         m_tb->seekKey(HA_READ_KEY_EXACT, m_tb->keymap());
         if (m_tb->stat() == 0)
         {
-            m_tb->beginUpdate(keynum);
+            double updateAtBefore = m_tb->beginUpdate(keynum, confrictCheck ? 2 : 0);
             if (m_tb->stat() == 0)
             {
                 m_tb->setRecordFromPacked((const uchar*)req.data,
-                                          *(req.datalen), req.blobHeader);
-                m_tb->update(true);
+                                          *(req.datalen), req.blobHeader, NULL);
+                m_tb->update(true, updateAtBefore);
             }
         }
     }
@@ -1037,16 +1051,17 @@ inline void dbExecuter::doUpdateKey(request& req)
         req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
-inline void dbExecuter::doUpdate(request& req)
+inline void dbExecuter::doUpdate(request& req, bool confrictCheck)
 {
+    
     m_tb = getTable(req.pbk->handle, SQLCOM_UPDATE);
     bool ncc = (req.keyNum == -1);
-    m_tb->beginUpdate(req.keyNum);
+    double updateAtBefore = m_tb->beginUpdate(req.keyNum, confrictCheck ? 1 : 0);
     if (m_tb->stat() == 0)
     {
         m_tb->setRecordFromPacked((const uchar*)req.data, *(req.datalen),
-                                  req.blobHeader);
-        m_tb->update(ncc);
+                                  req.blobHeader, NULL);
+        m_tb->update(ncc, updateAtBefore);
     }
     req.result = errorCodeSht(m_tb->stat());
     req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
@@ -1054,7 +1069,7 @@ inline void dbExecuter::doUpdate(request& req)
         req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
-inline void dbExecuter::doDeleteKey(request& req)
+inline void dbExecuter::doDeleteKey(request& req, bool confrictCheck)
 {
     m_tb = getTable(req.pbk->handle, SQLCOM_DELETE);
     char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
@@ -1064,9 +1079,13 @@ inline void dbExecuter::doDeleteKey(request& req)
         m_tb->seekKey(HA_READ_KEY_EXACT, m_tb->keymap());
         if (m_tb->stat() == 0)
         {
-            m_tb->beginDel();
+            double updateAtBefore = m_tb->beginDel(confrictCheck ? 2 : 0);
             if (m_tb->stat() == 0)
-                m_tb->del();
+            {
+                if (confrictCheck)
+                    m_tb->setUpdateTimeValue(req.data);    
+                m_tb->del(updateAtBefore);
+            }
         }
     }
     req.result = errorCodeSht(m_tb->stat());
@@ -1075,12 +1094,16 @@ inline void dbExecuter::doDeleteKey(request& req)
         req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
-inline void dbExecuter::doDelete(request& req)
+inline void dbExecuter::doDelete(request& req, bool confrictCheck)
 {
     m_tb = getTable(req.pbk->handle, SQLCOM_DELETE);
-    m_tb->beginDel();
+    double updateAtBefore = m_tb->beginDel(confrictCheck ? 1 : 0);
     if (m_tb->stat() == 0)
-        m_tb->del();
+    {
+        if (confrictCheck)
+            m_tb->setUpdateTimeValue(req.data);    
+        m_tb->del(updateAtBefore);
+    }
     req.result = errorCodeSht(m_tb->stat());
     req.paramMask = P_MASK_POSBLK;
     if (!m_tb->cursor())
@@ -1111,7 +1134,7 @@ inline void dbExecuter::doInsertBulk(request& req)
                 {
                     m_tb->clearBuffer();
                     m_tb->setRecordFromPacked(pos + sizeof(ushort_td), len,
-                                              req.blobHeader);
+                                              req.blobHeader, NULL);
                     if (i == *n - 1)
                         m_tb->insert((req.keyNum != -1));
                     else
@@ -1143,7 +1166,7 @@ inline void dbExecuter::doGetSchema(request& req, netsvc::server::netWriter* nw)
     char* p = nw->curPtr() - sizeof(unsigned short);// orver write row space
     if (req.keyNum == SC_SUBOP_VIEW_BY_SQL)
     {// Return SQL statement as show create view. 
-        TABLE_LIST tables; char key[256]; 
+        TABLE_LIST tables; char key[256]={0}; 
         const char* keyPtr = key;
         database* db = getDatabaseCid(req.cid);
         THD* thd = db->thd();
@@ -1190,7 +1213,9 @@ inline void dbExecuter::doGetSchema(request& req, netsvc::server::netWriter* nw)
     {// Return tabledef image binary.
         database* db = getDatabaseCid(req.cid);
         std::string name = getTableName(req);
-        schemaBuilder sb;
+        unsigned char bin_char_index = 
+                (req.keyNum == SC_SUBOP_TABLEDEF_BIN_STR) ? 0 : CHARSET_BIN;
+        schemaBuilder sb(bin_char_index);
         protocol::tdap::tabledef* td = sb.getTabledef(db, name.c_str(), 
                 (unsigned char*)p, *req.datalen);
         if (td)
@@ -1334,16 +1359,16 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             doInsert(req);
             break;
         case TD_REC_UPDATEATKEY:
-            doUpdateKey(req);
+            doUpdateKey(req, opTrn > 100);
             break;
         case TD_REC_UPDATE:
-            doUpdate(req);
+            doUpdate(req, opTrn > 100);
             break;
         case TD_REC_DELLETEATKEY:
-            doDeleteKey(req);
+            doDeleteKey(req, opTrn > 100);
             break;
         case TD_REC_DELETE:
-            doDelete(req);
+            doDelete(req, opTrn > 100);
             break;
         case TD_BEGIN_TRANSACTION:
         {
@@ -1526,14 +1551,18 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         case TD_GET_PER:
             m_tb = getTable(req.pbk->handle);
-            m_tb->calcPercentage();
-            req.result = errorCodeSht(m_tb->stat());
-            if (m_tb->stat() == 0)
+            if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
             {
-                req.paramMask = P_MASK_DATA | P_MASK_DATALEN ;
-                req.data = m_tb->percentResult();
-                req.resultLen = sizeof(int);
-            }
+                m_tb->calcPercentage();
+                req.result = errorCodeSht(m_tb->stat());
+                if (m_tb->stat() == 0)
+                {
+                    req.paramMask = P_MASK_DATA | P_MASK_DATALEN ;
+                    req.data = m_tb->percentResult();
+                    req.resultLen = sizeof(int);
+                }
+            }else
+                req.result = m_tb->stat();
             break;
         case TD_INSERT_BULK:
             doInsertBulk(req);
@@ -1574,9 +1603,12 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             releaseDatabase(req, op);
             break;
         case TD_AUTOMEKE_SCHEMA:
+        {
             m_tb = getTable(req.pbk->handle, SQLCOM_INSERT);
-            req.result = schemaBuilder().execute(getDatabaseCid(req.cid), m_tb, (req.keyNum==1));
+            unsigned char bin_char_index =  (req.keyNum & 2) ? 0 : CHARSET_BIN;
+            req.result = schemaBuilder(bin_char_index).execute(getDatabaseCid(req.cid), m_tb, (req.keyNum & 1));
             break;
+        }
         case TD_CREATETABLE:
             doCreateTable(req);
             break;
@@ -1681,7 +1713,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         {   
             m_tb = getTable(req.pbk->handle, SQLCOM_UPDATE);
             bool ncc = (req.keyNum == -1);
-            m_tb->beginUpdate(req.keyNum);
+            double v = m_tb->beginUpdate(req.keyNum, opTrn > 100);
             if (m_tb->stat() == 0)
             {
                 std::vector<std::string> ss;
@@ -1691,7 +1723,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 {
                     for (int i = 0; i < (int)ss.size() ; i+=2)
                         m_tb->setValue((short)atol(ss[i].c_str()), ss[i + 1], 0);
-                    m_tb->update(ncc);
+                    m_tb->update(ncc, v);
                     req.result = errorCodeSht(m_tb->stat());
                     req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
                     if (!m_tb->cursor())

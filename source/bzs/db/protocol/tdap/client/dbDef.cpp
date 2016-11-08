@@ -105,7 +105,7 @@ struct dbdimple
     }
 };
 
-dbdef::dbdef(nsdatabase* pbe, short defType) : nstable(pbe)
+dbdef::dbdef(nsdatabase* pbe, short defType, short mode) : nstable(pbe)
 {
     m_dimpl = new dbdimple();
     m_dimpl->deftype = defType;
@@ -113,6 +113,7 @@ dbdef::dbdef(nsdatabase* pbe, short defType) : nstable(pbe)
     m_keybuflen = 128;
     m_keybuf = &m_dimpl->keybuf[0];
     setShared();
+    setMode((char_td)mode);
 }
 
 dbdef::~dbdef()
@@ -745,6 +746,7 @@ tabledef* dbdef::initReadAfter(short tableIndex, const tabledef* data, uint_td d
     td->setFielddefsPtr();
     td->setKeydefsPtr();
     td->autoIncExSpace = ((database*)nsdb())->defaultAutoIncSpace();
+    td->convertToUtf8Schema();
     //Fix:Bug of maxRecordLen is mistake value saved, recalculate maxRecordLen.
     td->calcReclordlen();
     td->optionFlags.bitC = (td->fieldDefs[td->fieldCount -1].type == ft_myfixedbinary);
@@ -1014,12 +1016,14 @@ short dbdef::findKeynumByFieldNum(short tableIndex, short index)
 short dbdef::tableNumByName(const _TCHAR* tableName)
 {
     char buf[74];
+    const char* p = NULL;
     for (short i = 1; i <= m_dimpl->tableCount; i++)
     {
         tabledef* td = tableDefs(i);
         if (td)
         {
-            const char* p = td->toChar(buf, tableName, 74);
+            if (!p)
+            	p = td->toChar(buf, tableName, 74);
             if (strcmp(td->tableNameA(), p) == 0)
                 return i;
         }
@@ -1277,6 +1281,9 @@ bool dbdef::isPassKey(uchar_td FieldType)
 void dbdef::autoMakeSchema(bool nouseNullkey)
 {
     m_keynum = (int)nouseNullkey;
+    if (database::compatibleMode() & database::CMP_MODE_BINFD_DEFAULT_STR)
+        m_keynum += 2; // binary field defaut string
+
     tdap(TD_AUTOMEKE_SCHEMA);
 }
 
@@ -1591,12 +1598,15 @@ void dbdef::openDdf(const _TCHAR* dir, short Mode, const _TCHAR* OwnerName)
                             insertKey(tbid, tableDefs(tbid)->keyCount);
 
                         KeyDef = &(tableDefs(tbid)->keyDefs[id->keyid]);
-                        if (KeyDef->segmentCount < id->segmentnum + 1)
-                            KeyDef->segmentCount =
-                                (uchar_td)(id->segmentnum + 1);
-                        KeyDef->segments[id->segmentnum].fieldNum =
-                            (uchar_td)FieldIndex;
-                        KeyDef->segments[id->segmentnum].flags.all = id->flag;
+                        if (id->segmentnum < 8)
+                        {
+                            if (KeyDef->segmentCount < id->segmentnum + 1)
+                                KeyDef->segmentCount =
+                                    (uchar_td)(id->segmentnum + 1);
+                            KeyDef->segments[id->segmentnum].fieldNum =
+                                (uchar_td)FieldIndex;
+                            KeyDef->segments[id->segmentnum].flags.all = id->flag;
+                        }
                         id->seekNext();
                     }
                 }
@@ -1813,7 +1823,10 @@ void dbdef::synchronizeSeverSchema(short tableIndex)
     m_pdata = m_dimpl->bdf;
     m_buflen = m_datalen = m_dimpl->bdfLen;
     m_dimpl->bdf->id = tableIndex;
+    m_keynum = SC_SUBOP_TABLEDEF;
     tdap((ushort_td)TD_GET_SCHEMA);
+    m_keybuf = tmp;
+    m_keynum = 0;
     if (m_stat == STATUS_SUCCESS)
     {
         if (m_datalen == 0)
@@ -1831,7 +1844,6 @@ void dbdef::synchronizeSeverSchema(short tableIndex)
             delete tdold;
         }
     }
-    m_keybuf = tmp;
 }
 
 } // namespace client

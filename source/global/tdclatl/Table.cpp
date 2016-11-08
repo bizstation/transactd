@@ -865,6 +865,23 @@ STDMETHODIMP CTableTd::GetCreateSql(BSTR* retVal)
     return S_OK;
 }
 
+STDMETHODIMP CTableTd::get_UpdateConflictCheck(VARIANT_BOOL* Value)
+{
+    *Value = m_tb->updateConflictCheck();
+    return S_OK;
+}
+
+STDMETHODIMP CTableTd::SetUpdateConflictCheck(VARIANT_BOOL Value, VARIANT_BOOL* retVal)
+{
+    *retVal = m_tb->setUpdateConflictCheck(Value);
+    return S_OK;
+}
+STDMETHODIMP CTableTd::SetAlias(BSTR orign,  BSTR alias)
+{
+    m_tb->setAlias(orign, alias);
+    return S_OK;
+}
+
 void __stdcall onRecordCount(bzs::db::protocol::tdap::client::table* tb,
                           int count, bool& cancel)
 {

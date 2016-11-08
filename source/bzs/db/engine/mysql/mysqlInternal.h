@@ -494,6 +494,8 @@ inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet
 extern MYSQL_PLUGIN_IMPORT my_bool opt_show_slave_auth_info;
 
 #define STATUS_VAR_SCOPE ,SHOW_SCOPE_GLOBAL
+#define DSMRR_SIZE  sizeof(DsMrr_impl)
+
 #else //Not MySQL 5.7
 
 #define OPEN_TABLE_FLAG_TYPE MYSQL_OPEN_GET_NEW_TABLE
@@ -636,6 +638,7 @@ inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet
 #endif // Not MARIADB_10_1 || MARIADB_10_0
 
 #define STATUS_VAR_SCOPE 
+#define DSMRR_SIZE  0
 #endif // Not MySQL 5.7
 
 
@@ -737,5 +740,39 @@ public:
             mysql_mutex_unlock(m_lock);
     }
 };
+
+
+struct innodb_prebuit
+{
+	ulong		magic_n;
+	void*	    table;
+	void*	    index;
+	void*		trx;
+    //unsigned int dummy; // Bit flags
+    
+	unsigned	sql_stat_start:1;
+#ifndef MYSQL_5_7 
+	unsigned	mysql_has_locked:1;
+#endif
+	unsigned	clust_index_was_generated:1;
+	unsigned	index_usable:1;
+	unsigned	read_just_key:1;
+	unsigned	used_in_HANDLER:1;
+	unsigned	template_type:2;
+    
+    void* dummy2; //mysql_row_templ_t* mysql_template
+    void* dummy3; //mem_heap_t*	heap;
+    void* dummy4; //ins_node_t*	ins_node;	
+    void* dummy5; //byte* ins_upd_rec_buff	
+    void* dummy6; //const byte*	default_rec;	
+    unsigned long hint_need_to_fetch_extra_cols;
+};
+
+/* Values for hint_need_to_fetch_extra_cols */
+#define ROW_RETRIEVE_DEFAULT    	0
+#define ROW_RETRIEVE_PRIMARY_KEY	1
+#define ROW_RETRIEVE_ALL_COLS		2
+
+#define ROW_PREBUILT_ALLOCATED	78540783
 
 #endif // BZS_DB_ENGINE_MYSQL_MYSQLINTERNAL_H

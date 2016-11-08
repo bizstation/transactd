@@ -105,7 +105,7 @@ public:
 
     ~activeTable();
 
-    activeTable& alias(const _TCHAR* src, const _TCHAR* dst);
+    activeTable& alias(const _TCHAR* orign, const _TCHAR* alias);
 
     activeTable& resetAlias();
 

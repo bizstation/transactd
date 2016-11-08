@@ -128,6 +128,8 @@ class DLLLIB table : public nstable
     void* doDdba(uint_td size);
     bool isReadContinue(ushort_td& op);
     void incTabledefRefCount(tabledef* td, bool mysqlMullmode);
+    __int64 getUpdateStampValue() const;// orverride
+    bool getUpdateStampEnable() const;// orverride
 
 protected:
     explicit table(nsdatabase* pbe); // Inheritance is impossible
@@ -199,7 +201,7 @@ public:
     void moveBookmarks(unsigned int index);
     bookmark_td bookmarks(unsigned int index) const;
     void clearBuffer(eNullReset resetType = defaultNull);
-    unsigned int getRecordHash();
+    unsigned int getRecordHash() const;
     void smartUpdate();
 
     void setMra(multiRecordAlocator* p);
@@ -328,6 +330,7 @@ public:
     void setOnRecordCount(const recordCountFn v);
     recordCountFn onRecordCount() const;
     client::fields& fields();
+    void setAlias(const _TCHAR* orign, const _TCHAR* alias);
 };
 
 #define KEYVALUE_PTR 0

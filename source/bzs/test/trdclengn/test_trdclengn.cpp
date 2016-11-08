@@ -139,11 +139,12 @@ void testClone(database* db)
     db->close();
     BOOST_CHECK_MESSAGE(db->stat() == 0, "db close stat = " << db->stat());
     table* tb = db2->openTable(_T("user"), TD_OPEN_NORMAL);
-    BOOST_CHECK_MESSAGE(0 == db2->stat(), "openTable" << db2->stat());
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "openTable " << db2->stat());
     if (db2)
         db2->release();
     bool ret = nsdatabase::testTablePtr(tb);
     BOOST_CHECK_MESSAGE(ret == true, "testTablePtr");
+    
     tb->release();
 
     ret = nsdatabase::testTablePtr(tb);
@@ -490,20 +491,24 @@ void testFindIn(database* db)
     BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 10, "find in 10");
     tb->findNext();
     BOOST_CHECK_MESSAGE(tb->stat() == 4, "find in 300000 stat =" << tb->stat());
+    BOOST_CHECK(tb->fields().isInvalidRecord() == true);
+
 
     _TCHAR msg[1024];
     tb->keyValueDescription(msg, 1024);
     int comp = _tcscmp(_T("table:user\nstat:4\nid = 300000\n"), msg);
-    BOOST_CHECK_MESSAGE(comp == 0, "find in keyValueDescription");
+    BOOST_CHECK_MESSAGE(comp == 0, "find in keyValueDescription" );
+
 
     tb->findNext();
     BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 50, "find in 50");
     tb->findNext();
     BOOST_CHECK_MESSAGE(tb->stat() == 4, "find in -1");
+    BOOST_CHECK(tb->fields().isInvalidRecord() == true);
 
     tb->keyValueDescription(msg, 1024);
     comp = _tcscmp(_T("table:user\nstat:4\nid = -1\n"), msg);
-    BOOST_CHECK_MESSAGE(comp == 0, "find in keyValueDescription");
+    BOOST_CHECK_MESSAGE(comp == 0, "find in keyValueDescription" );
 
     tb->findNext();
     BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 80, "find in 80");
@@ -5226,6 +5231,56 @@ void testBinaryField()
     }
 }
 
+void testBinaryFieldSchame()
+{
+    database_ptr db = createDatabaseObject();
+    connectParams param(PROTOCOL, HOSTNAME, _T("querytest"),
+                            TRANSACTD_SCHEMANAME, g_userName, g_password);
+    param.setMode(TD_OPEN_NORMAL);
+    //prebuiltData(db.get(), param);
+    database::setCompatibleMode(database::CMP_MODE_OLD_ALL);
+    openDatabase(db, param);
+    short tbid = db->dbDef()->tableNumByName(_T("groups"));
+    BOOST_CHECK(tbid > 0);
+    const fielddef* fd =  &db->dbDef()->tableDefs(tbid)->fieldDefs[1];
+    BOOST_CHECK(fd->charsetIndex() == mysql::charsetIndex(GetACP()));
+    db->close(true /* withDropDefaultSchema */);
+
+    database::setCompatibleMode(database::CMP_MODE_MYSQL_NULL);
+    openDatabase(db, param);
+    tbid = db->dbDef()->tableNumByName(_T("groups"));
+    BOOST_CHECK(tbid > 0);
+    fd =  &db->dbDef()->tableDefs(tbid)->fieldDefs[1];
+    BOOST_CHECK(fd->charsetIndex() == CHARSET_BIN);
+    db->close(true /* withDropDefaultSchema */);
+
+
+    connectParams param2(PROTOCOL, HOSTNAME, _T("querytest"),
+                            NULL, g_userName, g_password);
+    database::setCompatibleMode(database::CMP_MODE_OLD_BIN);
+    openDatabase(db, param2);
+    table* tb = db->openTable(_T("groups"));
+    BOOST_CHECK(db->stat() == 0);
+    tbid = db->dbDef()->tableNumByName(_T("groups"));
+    BOOST_CHECK(tbid > 0);
+    fd =  &db->dbDef()->tableDefs(tbid)->fieldDefs[1];
+    BOOST_CHECK(fd->charsetIndex() == mysql::charsetIndex(GetACP()));
+    tb->release();
+    db->close(true /* withDropDefaultSchema */);
+
+    database::setCompatibleMode(database::CMP_MODE_MYSQL_NULL);
+    openDatabase(db, param2);
+    tb = db->openTable(_T("groups"));
+    BOOST_CHECK(db->stat() == 0);
+    tbid = db->dbDef()->tableNumByName(_T("groups"));
+    BOOST_CHECK(tbid > 0);
+    fd =  &db->dbDef()->tableDefs(tbid)->fieldDefs[1];
+    BOOST_CHECK(fd->charsetIndex() == CHARSET_BIN);
+    tb->release();
+    db->close(true /* withDropDefaultSchema */);
+
+}
+
 void testGetDirUri()
 {
     _TCHAR retbuf[MAX_PATH];
@@ -5651,8 +5706,11 @@ BOOST_AUTO_TEST_SUITE(field)
 
 BOOST_AUTO_TEST_CASE(binary)
 {
-    testBinaryField();    
+    testBinaryField();
+    testBinaryFieldSchame();    
 }
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(static_function)

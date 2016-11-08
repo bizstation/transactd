@@ -218,7 +218,7 @@ void testFielddefs(database* db)
         BOOST_CHECK_MESSAGE(fd->nullbytes() == 2, "Invalid nullbytes = " << (int)fd->nullbytes());
         //fielddefs copy test
         fielddefs& fds = *fielddefs::create();
-        fds.addAllFileds(tb->tableDef());
+        fds.addAllFields(tb->tableDef());
         fd = &fds[1];
         BOOST_CHECK_MESSAGE(fd->nullbit() == 0, "Invalid nullbit = " << (int)fd->nullbit());
         BOOST_CHECK_MESSAGE(fd->nullbytes() == 2, "Invalid nullbytes = " << (int)fd->nullbytes());
@@ -1066,6 +1066,42 @@ BOOST_AUTO_TEST_CASE(createInfo)
 }
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(tableAlias)
+BOOST_AUTO_TEST_CASE(tableAlias)
+{
+    testAlias();
+    testAutoincWithBlob();
+}
 
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(binaryFieldConvert)
+BOOST_AUTO_TEST_CASE(binaryFieldConvert)
+{
+    testBinaryFieldConvert();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(table_in)
+BOOST_AUTO_TEST_CASE(table_in_invalid)
+{
+    testTableInvalidRecord();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(table_utcc)
+BOOST_AUTO_TEST_CASE(table_utcc1)
+{
+    test_UTCC();
+    test_UTCC_delete();
+    test_UTCC_wt();
+    test_UTCC_wt_save();
+    test_UTCC_wt_delete();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+    
     
 // ------------------------------------------------------------------------

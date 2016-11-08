@@ -52,7 +52,7 @@ static const _TCHAR* SYSVAR_NAME[TD_VAR_SIZE] =
     _T("hs_port"),
     _T("use_handlersocket"),
     _T("timestamp_always"),
-    _T("startup_ha")
+    _T("startup_ha"),
 };
 
 static const _TCHAR* STATUSVAR_NAME[TD_SVAR_SIZE] =

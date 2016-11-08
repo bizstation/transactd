@@ -733,6 +733,7 @@ public:
 
 #endif
 
+    /* one-to-one relation only */
     template <class Container>
     void readEach(Container& mdls, queryBase& q, bool sorted = false,
                   bzs::rtl::exception * e = NULL)
@@ -781,7 +782,8 @@ public:
                  (m_map.compKeyValue(mdlb, mdl, m_tb->keyNum()) == true)))
             {
                 m_tb->findNext();
-                if (m_tb->stat() != 0)
+                if ((m_tb->stat() != STATUS_SUCCESS) &&
+                    (m_tb->stat() != STATUS_NOT_FOUND_TI))
                 {
                     _TCHAR buf[8192];
                     m_tb->keyValueDescription(buf, 8192);
@@ -799,6 +801,7 @@ public:
         }
     }
 
+    /* one-to-one relation only */
     template <class BaseContainer, class T2>
     void readEach(BaseContainer& mdls, T* (T2::*func)() const, queryBase& q)
     {
@@ -808,6 +811,7 @@ public:
         readEach(*refList, q, true, NULL);
     }
 
+    /* one-to-one relation only */
     template <class BaseContainer, class T2>
     void readEach(BaseContainer& mdls, T* (T2::*func)() const, queryBase& q,
                   bzs::rtl::exception& e)
@@ -818,7 +822,7 @@ public:
         readEach(*refList, q, true, &e);
     }
 
-    /* No use field select */
+    /* No use field select. one-to-one relation only */
     template <class Container>
     void readEach(Container& mdls, bool sorted = false,
                   bzs::rtl::exception * e = NULL)
@@ -838,7 +842,8 @@ public:
             {
                 m_map.setKeyValues(mdl, fds, m_tb->keyNum());
                 readIndex(m_tb, eSeekEqual);
-                if (m_tb->stat() != 0)
+                if ((m_tb->stat() != STATUS_SUCCESS) &&
+                    (m_tb->stat() != STATUS_NOT_FOUND_TI))
                 {
                     _TCHAR buf[8192];
                     m_tb->keyValueDescription(buf, 8192);
@@ -856,7 +861,7 @@ public:
         }
     }
 
-    /* No use field select */
+    /* No use field select. one-to-one relation only */
     template <class BaseContainer, class T2>
     void readEach(BaseContainer& mdls, T* (T2::*func)() const)
     {
@@ -866,6 +871,7 @@ public:
         readEach(*refList, true, NULL);
     }
 
+    /* one-to-one relation only */
     template <class BaseContainer, class T2>
     void readEach(BaseContainer& mdls, T* (T2::*func)() const,
                   bzs::rtl::exception& e)

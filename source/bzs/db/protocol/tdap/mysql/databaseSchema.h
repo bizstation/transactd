@@ -49,8 +49,9 @@ class schemaBuilder
     short insertMetaRecord(engine::mysql::table* mtb, engine::mysql::table* src,
                            int id, bool nouseNullkey);
     short m_stat;
+    unsigned char m_binFdCharset;
 public:
-    schemaBuilder();
+    schemaBuilder(unsigned char binFdCharset);
     ~schemaBuilder();
     short stat() const { return m_stat;}
     tabledef* getTabledef(engine::mysql::table* src, int id, bool nouseNullkey, uchar* rec, size_t size);

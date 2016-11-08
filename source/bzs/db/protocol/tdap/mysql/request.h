@@ -116,24 +116,31 @@ public:
             }
         }
 
-        if (P_MASK_DATALEN & paramMask)
+        if (P_MASK_DB_AINC_VAL & paramMask)
         {
-            datalenPtr = p;
-            p += sizeof(uint_td);
+            memcpy(p, (const char*)datalen, sizeof(autoIncPackInfo));
+            p += sizeof(autoIncPackInfo);
         }
-
-        if (P_MASK_DATA & paramMask)
+        else
         {
-            if (tb && (data == tb->record()))
-                resultLen = tb->recordPackCopy(p, 0);
-            else
-                memcpy(p, (const char*)data, resultLen);
-            p += resultLen;
+            if (P_MASK_DATALEN & paramMask)
+            {
+                datalenPtr = p;
+                p += sizeof(uint_td);
+            }
+
+            if (P_MASK_DATA & paramMask)
+            {
+                if (tb && (data == tb->record()))
+                    resultLen = tb->recordPackCopy(p, 0);
+                else
+                    memcpy(p, (const char*)data, resultLen);
+                p += resultLen;
+            }
+
+            if (P_MASK_DATALEN & paramMask)
+                memcpy(datalenPtr, (const char*)&resultLen, sizeof(uint_td));
         }
-
-        if (P_MASK_DATALEN & paramMask)
-            memcpy(datalenPtr, (const char*)&resultLen, sizeof(uint_td));
-
         if (P_MASK_KEYBUF & paramMask)
         {
             if (tb)

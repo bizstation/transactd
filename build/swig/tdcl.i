@@ -742,6 +742,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nstable::setStat;
 %ignore bzs::db::protocol::tdap::client::nstable::tdap;
 %ignore bzs::db::protocol::tdap::client::nstable::test;
+%ignore bzs::db::protocol::tdap::client::nstable::stats;
 %ignore bzs::db::protocol::tdap::client::nstable::test_store;
 %ignore bzs::db::protocol::tdap::client::nstable::throwError;
 %ignore bzs::db::protocol::tdap::client::nstable::tdapErr(HWND hWnd, _TCHAR* retbuf=NULL);
@@ -791,6 +792,9 @@ using namespace bzs::db::protocol::tdap::client;
 };
 %ignore bzs::db::protocol::tdap::client::recordset::recordset;
 %ignore bzs::db::protocol::tdap::client::recordset::~recordset;
+%ignore bzs::db::protocol::tdap::client::recordset::begin;
+%ignore bzs::db::protocol::tdap::client::recordset::end;
+
 
 // * bzs/db/protocol/tdap/client/table.h *
 %ignore bzs::db::protocol::tdap::client::keyValuePtr;
@@ -1207,6 +1211,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::blobDataLen;
 %ignore bzs::db::protocol::tdap::blobLenBytes;
 %ignore bzs::db::protocol::tdap::timeStampDefaultStr;
+%ignore bzs::db::protocol::tdap::getFilterLogicTypeCode;
 %ignore bzs::db::protocol::tdap::keySpec;
 %ignore bzs::db::protocol::tdap::fileSpec;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataPtr;

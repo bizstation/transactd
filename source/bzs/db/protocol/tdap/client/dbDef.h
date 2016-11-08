@@ -74,7 +74,7 @@ class DLLLIB dbdef : private nstable
     void tableDefCopy(tabledef* dest, const tabledef* src, size_t size);
 
     ~dbdef();
-    dbdef(nsdatabase* pbe, short defType);
+    dbdef(nsdatabase* pbe, short defType, short mode);
     void create(const _TCHAR* uri);
     void autoMakeSchema(bool noUseNullkey);
     bool testTablePtr(tabledef* td);

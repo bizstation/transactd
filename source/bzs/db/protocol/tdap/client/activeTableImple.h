@@ -242,6 +242,7 @@ class activeTableImple : public activeObject<map_orm>
             {
                 // if target field type is different then we need convrt type
                 const fielddef& f = td->fieldDefs[kd->segments[i].fieldNum];
+                memset(buf_ptr, 0, MAX_KEYLEN);
                 field fd(buf_ptr - f.pos, f, fds);
                 len[i] = f.isStringType() ? 0xff : f.len;
                 if (mdl[fieldIndexes[i]].isNull())

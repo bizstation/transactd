@@ -128,7 +128,7 @@ public:
     void FinalRelease() {}
 
 public:
-    STDMETHOD(Add)(BSTR Name, VARIANT_BOOL Asc);
+    STDMETHOD(Add)(BSTR Name, VARIANT_BOOL Asc, ISortFields** retVal);
     STDMETHOD(get_Size)(int* Value);
     STDMETHOD(get_Item)(int Index, ISortField** retVal);
     STDMETHOD(Clear)();

@@ -1,5 +1,111 @@
 ﻿リリースノート
 ================================================================================
+Version 3.6.0 2016/11/08
+================================================================================
+新機能
+--------------------------------------------------------------------------------
+* レコードの`update`および`delete`時に、タイムスタンプフィールドを使って最後に
+  読み取った値が既に他のユーザーによって変更されたかどうかを検出する機能を追加
+  しました。詳細は`nstable::setUpdateConflictCheck`を参照してください。
+
+* PHPとRuby用エクステンションの`recordset`と`fields`クラスに1行の取得方法を指定
+  する`fetchMode`プロパティを追加しました。これにより行の取り出しを配列・ハッシュ
+  ・オブジェクト・クラス・`record`オブジェクトのいずれかから選択可能になりました。
+  詳細は http://www.bizstation.jp/ja/transactd/documents/developer_guide.html#fetchMode
+  を参照してください。
+
+修正と変更点
+--------------------------------------------------------------------------------
+* `ft_string` `ft_lstring` `ft_myvarbinary` `ft_myblob`型フィールドにおいて
+  `charsetIndex`のデフォルト値が`CHARSET_BIN`になりました。以前は`table`の
+  `charsetIndex`でした。以前と同じように`table`の`charsetIndex`をデフォルトに
+  したい場合は、`database::setCompatibleMode`に
+  `database::CMP_MODE_BINFD_DEFAULT_STR = 2`を指定してください。
+
+* `void table::setAlias(const _TCHAR* orign, const _TCHAR* alias)`メソッドを追加
+  しました。`table`オブジェクトでもフィールドの別名が使用できます。
+
+* `void fielddefs::addAliasName(int index, const _TCHAR* name)`メソッドを追加しま
+  した。
+
+* [PHP][Ruby] `Table`クラスに`getRow`メソッドを追加しました。`getRow`は`fields`
+  メソッドのエイリアスです。
+
+* [PHP][Ruby] `Table`クラスと`Recordset`クラスに`getRecord`メソッドを追加しました。
+  `getRecord`は`fetchMode`の値に関わらず常に`record`オブジェクトを返します。
+
+* [PHP][Ruby] `Table`クラスに`findAll`メソッドを追加しました。`findAll`は内部で
+  以下の処理を行います。結果は行の配列が返ります。
+  ```php
+  function findAll()
+  {
+    $tb->find();
+    while($tb->stat())
+      array_push($a, tb->getRow());
+    return $a;
+  }
+  ```
+
+* [PHP][Ruby] 以下のメソッドを追加しました。
+  オブジェクトをパラメータとしたCRUDオペレーションを行うことができます。
+  CRUDオペレーションはすべて`primaryKey`で処理されます。
+  ```php
+  table::saveByObject();
+  table::updateByObject();
+  table::insertByObject();
+  table::readByObject();
+  table::deleteByObject();
+  table::seekKeyValue();
+  record::setValueByObject();
+  ```
+  `table::seekKeyValue`は事前に指定されたキー値でレコードを移動します。
+  以下の内容をエクステンション内で処理します。
+  ```php
+  function seekKeyValue($keyValues)
+  {
+    $tb->setKeyNum(primarykey);
+    $tb->clearBuffer();
+    $i = 0;
+    foreach($keyValues as $value)
+      $tb->setFV(keyseg($i++), $value);
+    $tb->seek();
+    return $tb->stat();
+  }
+  ```
+
+* [PHP] 以下の定数名を変更しました。
+  ```
+  RECORD_KEYVALUE_FIELDVALUE --> FIELD_VALUE_MODE_VALUE
+  RECORD_KEYVALUE_FIELDOBJECT --> FIELD_VALUE_MODE_OBJECT
+  FIELDVALUEMODE_RETURNNULL --> NULLVALUE_MODE_RETURNNULL
+  FIELDVALUEMODE_NORETURNNULL --> NULLVALUE_MODE_NORETURNNULL
+  ```
+
+* [PHP] 以下の関数名の変更しました。
+  ```
+  recordValueMode --> fieldValueMode
+  fieldValueMode --> nullValueMode
+  setRecordValueMode --> setFieldValueMode
+  setFieldValueMode --> setNullValueMode
+  ```
+
+* [Ruby] 各クラスおよびモジュールのメソッド名とプロパティ名について、
+  `snake_case`形式の別名を追加しました。
+
+* `writableRecord::save`で`Antoincrement`フィールドが反映されないバグを修正
+  しました。
+
+* `insert`オペレーション直後に`blob`フィールドの値が正しく読み出せない不具合を
+  修正しました。
+
+* `GroupBy`の`first` `last`関数でNULLを含むレコードがあった場合に結果が正しく
+  ないことがある不具合を修正しました。
+
+* 1対多の`Join`において、キーフィールドが正しく設定されないことがあるバグを修正
+  しました。
+
+
+================================================================================
 Version 3.5.0 2016/07/11
 ================================================================================
 新機能
@@ -99,8 +205,8 @@ Version 3.3.0 2016/04/18
 * `const records& connMgr::statusvars()`が追加されました。この関数はTransactd 
   status variable を取得可能です。
 
-* `connMgr::slaveStatus()`メソッドでデフォルトバッファの67バイトを超えるメッセージ
-  を取得可能にしました。
+* `connMgr::slaveStatus()`メソッドでデフォルトバッファの67バイトを超えるメッセー
+ ジを取得可能にしました。
 
 修正と変更点
 --------------------------------------------------------------------------------

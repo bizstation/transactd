@@ -81,10 +81,27 @@ public:
                          ,const _TCHAR* userName=NULL, const _TCHAR* passwd=NULL)
         : m_type(TYPE_SCHEMA_BDF), m_mode(TD_OPEN_READONLY)
     {
+        if (!protocol || !hostOrIp || !dbname) return;
+
         _TCHAR dbf[MAX_PATH]={0x00};
+        const _TCHAR* ext = _T(".bdf");
+        if (protocol[0] == 'b')
+        { // btrv include file extension
+            if (_tcscmp(schemaTable, _T("file")) == 0 ||
+                        _tcscmp(schemaTable, _T("FILE")) == 0)
+            {
+                ext = _T(".ddf");
+                m_type = TYPE_SCHEMA_DDF;
+            }
+            if (_tcsstr(schemaTable, _T(".ddf")) || _tcsstr(schemaTable, _T(".DDF")))
+            {
+                m_type = TYPE_SCHEMA_DDF;
+                ext = _T("");
+            }
+        }
         if (schemaTable && schemaTable[0])
         {
-            const _TCHAR* ext = _T(".bdf");
+
             if (_tcscmp(schemaTable, TRANSACTD_SCHEMANAME)==0)
                 ext = _T("");
             _stprintf_s(dbf, MAX_PATH, _T("dbfile=%s%s"), schemaTable, ext);   

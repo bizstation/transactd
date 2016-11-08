@@ -503,11 +503,15 @@ public:
             {
                 if (m_funcs[j]->isNull(i))
                     (*cur).setInvalidMemblock(m_funcs[j]->resultKey());
-                else if (m_funcs[j]->resultType() == ft_float)
-                    setValue(cur, m_funcs[j]->resultKey(), m_funcs[j]->numericResult(i));
                 else
-                    memcpy((*cur)[m_funcs[j]->resultKey()].ptr() ,
-                            m_funcs[j]->stringResult(i), m_funcs[j]->resultLen());
+                {
+                    (*cur).setInvalidMemblock(-1);
+                    if (m_funcs[j]->resultType() == ft_float)
+                        setValue(cur, m_funcs[j]->resultKey(), m_funcs[j]->numericResult(i));
+                    else
+                        memcpy((*cur)[m_funcs[j]->resultKey()].ptr() ,
+                                m_funcs[j]->stringResult(i), m_funcs[j]->resultLen());
+                }
             }
             mdls.push_back(cur);
         }

@@ -138,9 +138,10 @@ STDMETHODIMP CSortField::put_Asc(VARIANT_BOOL Value)
 }
 
 //------------------------------------------------------------------------
-STDMETHODIMP CSortFields::Add(BSTR Name, VARIANT_BOOL Asc)
+STDMETHODIMP CSortFields::Add(BSTR Name, VARIANT_BOOL Asc, ISortFields** retVal)
 {
     m_sortFields.add(Name, (Asc == -1));
+    this->QueryInterface(IID_ISortFields, (void**)retVal);
     return S_OK;
 }
 

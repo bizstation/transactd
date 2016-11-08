@@ -152,53 +152,61 @@ public:
         }
         if (P_MASK_PB_ERASE_BM & paramMask)
              pbk->bookmarkLen = 0; 
-
-        if (P_MASK_DATALEN & paramMask)
+        
+        if (P_MASK_DB_AINC_VAL & paramMask)
         {
-            uint_td tmp = *((uint_td*)p);
-            if (*datalen < tmp)
-            {
-                result = STATUS_BUFFERTOOSMALL;
-                return ;
-            }
-            else
-                *datalen = tmp;
-            p += sizeof(uint_td);
-        }
-
-        /*if (P_MASK_FINALDATALEN & paramMask)
-        {
-            memset(data, 0, *datalen);
-            if (*datalen < segmentDataLen)
-                result = STATUS_BUFFERTOOSMALL;
-            else
-                *datalen = segmentDataLen;
-        }*/
-#ifdef USE_DATA_COMPRESS
-        if (P_MASK_USELZSS & paramMask)
-        {
-            unsigned int compSize;
-            memcpy(&compSize, p, sizeof(unsigned int));
-            p += sizeof(unsigned int);
-            unsigned int decompSize = bzs::rtl::lzssDecode(p, data);
-            p += compSize;
+            autoIncPackInfo* ai = (autoIncPackInfo*)p;
+            memcpy(((char*)data) + ai->pos, &ai->value, ai->len);
         }
         else
-#endif
-        if (P_MASK_DATA & paramMask)
         {
-            if (ex)
+            if (P_MASK_DATALEN & paramMask)
             {
-                if (pbk->allocFunc && pbk->tb)
-                    data = pbk->allocFunc(pbk->tb, *datalen);
+                uint_td tmp = *((uint_td*)p);
+                if (*datalen < tmp)
+                {
+                    result = STATUS_BUFFERTOOSMALL;
+                    return ;
+                }
+                else
+                    *datalen = tmp;
+                p += sizeof(uint_td);
             }
-            memcpy(data, p, *datalen);
-            p += *datalen;
+
             /*if (P_MASK_FINALDATALEN & paramMask)
             {
-                memcpy(data, &rows, 2);
-                p += sizeof(unsigned int);
+                memset(data, 0, *datalen);
+                if (*datalen < segmentDataLen)
+                    result = STATUS_BUFFERTOOSMALL;
+                else
+                    *datalen = segmentDataLen;
             }*/
+    #ifdef USE_DATA_COMPRESS
+            if (P_MASK_USELZSS & paramMask)
+            {
+                unsigned int compSize;
+                memcpy(&compSize, p, sizeof(unsigned int));
+                p += sizeof(unsigned int);
+                unsigned int decompSize = bzs::rtl::lzssDecode(p, data);
+                p += compSize;
+            }
+            else
+    #endif
+            if (P_MASK_DATA & paramMask)
+            {
+                if (ex)
+                {
+                    if (pbk->allocFunc && pbk->tb)
+                        data = pbk->allocFunc(pbk->tb, *datalen);
+                }
+                memcpy(data, p, *datalen);
+                p += *datalen;
+                /*if (P_MASK_FINALDATALEN & paramMask)
+                {
+                    memcpy(data, &rows, 2);
+                    p += sizeof(unsigned int);
+                }*/
+            }
         }
         if (P_MASK_KEYBUF & paramMask)
         {

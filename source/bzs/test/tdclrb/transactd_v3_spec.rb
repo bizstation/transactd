@@ -203,9 +203,10 @@ def createUserTable(db)
   fieldIndex += 1
   fd = dbdef.insertField(tableid, fieldIndex)
   fd.setName('tel')
-  fd.type = Transactd::Ft_myvarchar
-  fd.len = 4
-  fd.setLenByCharnum(21)
+  #fd.type = Transactd::Ft_myvarchar
+  #fd.setLenByCharnum(21)
+  fd.type = Transactd::Ft_myvarbinary
+  fd.len = 64
   fd.setNullable(true)
   fieldIndex += 1
   fd = dbdef.insertField(tableid, fieldIndex)
@@ -337,7 +338,145 @@ def createSetEnumBitTable(db)
   expect(db.stat()).to eq 0
 end
 
+class RecordDateTime
+  attr_accessor :update_datetime, :create_datetime
+  def initialize
+    @update_datetime = nil
+    @create_datetime = nil
+  end
+  def empty?
+    @update_datetime.nil? && @create_datetime.nil?
+  end
+end
+
+class RecordDateTimeWithAlias
+  attr_accessor :update, :create
+  def initialize
+    @update = nil
+    @create = nil
+  end
+  def empty?
+    @update.nil? && @create.nil?
+  end
+end
+
+class DateTimeNest
+  attr_accessor :datetime, :aliased_datetime
+  def initialize
+    @datetime = RecordDateTime.new
+    @aliased_datetime = RecordDateTimeWithAlias.new
+  end
+end
+
+class NameHolder
+  attr_accessor :name, :"名前", :"名前2"
+  def initialize
+    @name = nil
+    @名前 = nil
+    @名前2 = nil
+  end
+end
+
+class NestName
+  attr_accessor :name_holder
+  def initialize
+    @name_holder = NameHolder.new
+  end
+end
+
+class User
+  attr_accessor :a, :b, :c, :datetime, :aliased_datetime, :nest, :nest_name
+  def initialize(_a, _b, _c)
+    @a = _a
+    @b = _b
+    @c = _c
+    @datetime = RecordDateTime.new
+    @aliased_datetime = RecordDateTimeWithAlias.new
+    @nest = DateTimeNest.new
+    @nest_name = NestName.new
+  end
+  
+  @_nodefine_original = false
+  def self.define_original_name
+    @_nodefine_original = false
+  end
+  def self.remove_original_name
+    @_nodefine_original = true
+  end
+  
+  @_alias_map = {}
+  def self.alias_attribute(newname, oldname)
+    @_alias_map = {} if @_alias_map.nil?
+    @_alias_map[newname.to_sym] = oldname.to_s
+  end
+  
+  @_transfer_map = {}
+  def self.transfer_map=(v)
+    @_transfer_map = v
+  end
+  
+  def self.reset_class
+    remove_instance_variable(:@_alias_map) if self.instance_variables.include?(:@_alias_map)
+    remove_instance_variable(:@_accessor_initialized) if self.instance_variables.include?(:@_accessor_initialized)
+    remove_instance_variable(:@_transfer_map) if self.instance_variables.include?(:@_transfer_map)
+    remove_instance_variable(:@_internal_transfer_map) if self.instance_variables.include?(:@_internal_transfer_map)
+    ["id", "name", "名前", "名前2", "group", "tel", "update_datetime", "create_datetime"].each { |n|
+      remove_method(n.to_sym) if self.instance_methods(false).include?(n.to_sym)
+      remove_method("#{n}=".to_sym) if self.instance_methods(false).include?("#{n}=".to_sym)
+    }
+  end
+end
+
+class Number
+  attr_accessor :tel
+end
+
+class Phone
+  attr_accessor :number, :number2
+  def initialize
+    @number = Number.new
+    @number2 = nil
+  end
+end
+
+class UserT
+  attr_accessor :phone, :phone2, :id
+  def initialize
+    @id = 0
+    @phone = Phone.new
+    @phone2 = nil
+  end
+  
+  @_transfer_map = { tel: [:phone, :number] }
+  def self.setTransferMap(type)
+    remove_instance_variable(:@_transfer_map) if self.instance_variables.include?(:@_transfer_map)
+    remove_instance_variable(:@_internal_transfer_map) if self.instance_variables.include?(:@_internal_transfer_map)
+    if (type == 0)
+      @_transfer_map = { tel: [:phone, :number] }
+    elsif (type == 1)
+      @_transfer_map = { tel: [:phone2, :number] }
+    elsif (type == 2)
+      @_transfer_map = { tel: [:phone, :number2] }
+    end
+  end
+end
+
 describe Transactd, 'V3Features' do
+  it 'test no schema' do
+    db = Transactd::Database.new()
+    db.open(URL_AUTOSCHEMA)
+    if (db.stat == 0)
+      db.drop()
+      expect(db.stat()).to eq 0
+    end
+    db.create(URL_AUTOSCHEMA)
+    expect(db.stat()).to eq 0
+    db.open(URL_AUTOSCHEMA)
+    expect(db.stat()).to eq 0
+    db.drop()
+    expect(db.stat()).to eq 0
+  end
+  
   it 'create tables' do
     db = Transactd::Database.new()
     createDatabase(db)
@@ -361,16 +500,23 @@ describe Transactd, 'V3Features' do
     expect(db.autoSchemaUseNullkey()).to eq true
     db.setAutoSchemaUseNullkey(false)
     expect(db.autoSchemaUseNullkey()).to eq false
-    expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
-    Transactd::Database::setCompatibleMode(Transactd::Database::CMP_MODE_OLD_NULL)
-    expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_OLD_NULL
+    # default
+    expect(Transactd::Database::compatibleMode).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
+    # CMP_MODE_OLD_NULL
+    Transactd::Database::set_compatible_mode(Transactd::Database::CMP_MODE_OLD_NULL)
+    expect(Transactd::Database::compatibleMode).to eq Transactd::Database::CMP_MODE_OLD_NULL
+    # CMP_MODE_BINFD_DEFAULT_STR
+    Transactd::Database::compatible_mode = Transactd::Database::CMP_MODE_BINFD_DEFAULT_STR
+    expect(Transactd::Database::compatibleMode).to eq Transactd::Database::CMP_MODE_BINFD_DEFAULT_STR
+    # CMP_MODE_MYSQL_NULL
     Transactd::Database::setCompatibleMode(Transactd::Database::CMP_MODE_MYSQL_NULL)
-    expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
+    expect(Transactd::Database::compatible_mode).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
     db.close()
   end
   
   it 'check' do
     Transactd::Database::setCompatibleMode(Transactd::Database::CMP_MODE_MYSQL_NULL)
+    expect(Transactd::Database::compatible_mode).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
     db = Transactd::Database.new()
     openDatabase(db)
     openTableOnce(db)
@@ -439,7 +585,7 @@ describe Transactd, 'V3Features' do
     # getSqlStringForCreateTable
     sql = db.getSqlStringForCreateTable("extention")
     expect(db.stat()).to eq 0
-    expect(sql).to eq 'CREATE TABLE `extention` (`id` INT NOT NULL ,`comment` VARCHAR(60) binary NULL DEFAULT NULL,`bits` BIGINT NOT NULL , UNIQUE key0(`id`)) ENGINE=InnoDB default charset=utf8'
+    expect(sql).to eq 'CREATE TABLE `extention` (`id` INT NOT NULL ,`comment` VARCHAR(60) binary NULL DEFAULT NULL,`bits` BIGINT NOT NULL , PRIMARY KEY(`id`)) ENGINE=InnoDB default charset=utf8'
     # setValidationTarget(bool isMariadb, uchar_td srvMinorVersion)
     td = dbdef.tableDefs(1)
     td.setValidationTarget(true, 0)
@@ -570,11 +716,11 @@ describe Transactd, 'V3Features' do
     rs2 = rs2.matchBy(rq)
     expect(rs2.count()).to eq 10
     # setBin bin
-    hex_str = ['FF01FF02']
+    hex_str = ['FF00FF02']
     bin = hex_str.pack('H*')
     wr["tel"].setBin(bin)
     ret = wr["tel"].bin()
-    expect(ret.unpack('H*')[0].upcase()).to eq hex_str[0]
+    expect(bin).to eq ret
     atu.release()
     ate.release()
     db.close()
@@ -810,7 +956,9 @@ describe Transactd, 'V3Features' do
     # other database connection
     db_other = Transactd::Database.new()
     openDatabase(db_other)
-    tb_other = db_other.openTable("user")
+    tb_other = db_other.openTable("user", Transactd::TD_OPEN_READONLY)
+    expect(db_other.stat()).to eq 0
+    db_other.beginTrn
     expect(db_other.stat()).to eq 0
     # connMgr connection
     db = Transactd::Database.new()
@@ -825,10 +973,27 @@ describe Transactd, 'V3Features' do
     recs = mgr.inUseDatabases(recs[0].conId)
     expect(mgr.stat()).to eq 0
     expect(recs.size()).to eq 1
+    #   connRecord::inTransaction, connRecord::inSnapshot
+    rec = recs[0]
+    expect(rec.name).to eq DBNAME
+    expect(rec.inTransaction).to be true
+    expect(rec.inSnapshot).to be false
     # inUseTables
     recs = mgr.inUseTables(recs[0].conId, recs[0].db)
     expect(mgr.stat()).to eq 0
     expect(recs.size()).to eq 2
+    #   connRecord::openNormal, connRecord::openReadOnly
+    #   connRecord::openEx, connRecord::openReadOnlyEx
+    expect(recs[0].name).to eq "test" # schema table
+    expect(recs[0].openNormal).to be true
+    expect(recs[0].openReadOnly).to be false
+    expect(recs[0].openEx).to be false
+    expect(recs[0].openReadOnlyEx).to be false
+    expect(recs[1].name).to eq "user" # opened as tb_other
+    expect(recs[1].openNormal).to be false
+    expect(recs[1].openReadOnly).to be true
+    expect(recs[1].openEx).to be false
+    expect(recs[1].openReadOnlyEx).to be false
     # tables, views
     recs = mgr.tables("test_v3")
     expect(mgr.stat()).to eq 0
@@ -931,6 +1096,1022 @@ describe Transactd, 'V3Features' do
     expect(mgr.stat()).to eq Transactd::ERROR_TD_HOSTNAME_NOT_FOUND
     mgr.disconnect()
     tb_other.close()
+    db_other.abortTrn
     db_other.close()
+  end
+  it 'fetch_mode' do
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    tb = db.openTable("user")
+    expect(tb.stat()).to eq 0
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    # test fetch field type (table)
+    #   FETCH_RECORD_INTO
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields()
+    #     FIELD_VALUE_MODE_OBJECT
+    Transactd::field_value_mode = Transactd::FIELD_VALUE_MODE_OBJECT
+    expect(rec["id"].i()).to eq 1
+    #     FIELD_VALUE_MODE_VALUE
+    Transactd::set_field_value_mode(Transactd::FIELD_VALUE_MODE_VALUE)
+    expect(rec["id"]).to eq 1
+    #   FETCH_VAL_NUM
+    tb.fetchMode = Transactd::FETCH_VAL_NUM
+    expect(tb.fetchMode).to eq Transactd::FETCH_VAL_NUM
+    rec = tb.fields()
+    expect(rec[0]).to eq 1
+    #   FETCH_VAL_ASSOC
+    tb.fetchMode = Transactd::FETCH_VAL_ASSOC
+    expect(tb.fetchMode).to eq Transactd::FETCH_VAL_ASSOC
+    rec = tb.fields()
+    expect(rec["id"]).to eq 1
+    #   FETCH_VAL_BOTH
+    tb.fetchMode = Transactd::FETCH_VAL_BOTH
+    expect(tb.fetchMode).to eq Transactd::FETCH_VAL_BOTH
+    rec = tb.fields()
+    expect(rec[0]).to eq 1
+    expect(rec["id"]).to eq 1
+    #   FETCH_OBJ
+    tb.fetchMode = Transactd::FETCH_OBJ
+    expect(tb.fetchMode).to eq Transactd::FETCH_OBJ
+    usr = tb.fields()
+    expect(usr.id).to eq 1
+    expect(usr.名前).to eq "1 user"
+    #   FETCH_USR_CLASS
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    User.reset_class
+    tb.fetchClass = User
+    tb.ctorArgs = ["1", "2", "3"]
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    usr = tb.fields()
+    expect(usr.id).to eq 1
+    expect(usr.名前).to eq "1 user"
+    expect(usr.a).to eq "1"
+    expect(usr.b).to eq "2"
+    expect(usr.c).to eq "3"
+    tb.close()
+    # test fetch field type (activeTable)
+    at = Transactd::ActiveTable.new(db, "user")
+    q = Transactd::Query.new()
+    q.where("id", "<", 10)
+    rs = at.index(0).keyValue(0).read(q)
+    #   FETCH_RECORD_INTO
+    rs.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(rs.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    expect(rs.size()).to eq 9
+    #     FIELD_VALUE_MODE_OBJECT
+    Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_OBJECT)
+    expect(rs[0]["id"].i()).to eq 1
+    #     FIELD_VALUE_MODE_VALUE
+    Transactd::field_value_mode = Transactd::FIELD_VALUE_MODE_VALUE
+    expect(rs[0]["id"]).to eq 1
+    #   FETCH_VAL_NUM
+    rs.fetchMode = Transactd::FETCH_VAL_NUM
+    expect(rs.fetchMode).to eq Transactd::FETCH_VAL_NUM
+    expect(rs.size()).to eq 9
+    expect(rs[0][0]).to eq 1
+    #   FETCH_VAL_ASSOC
+    rs.fetchMode = Transactd::FETCH_VAL_ASSOC
+    expect(rs.fetchMode).to eq Transactd::FETCH_VAL_ASSOC
+    expect(rs.size()).to eq 9
+    expect(rs[0]["id"]).to eq 1
+    #   FETCH_VAL_BOTH
+    rs.fetchMode = Transactd::FETCH_VAL_BOTH
+    expect(rs.fetchMode).to eq Transactd::FETCH_VAL_BOTH
+    expect(rs.size()).to eq 9
+    expect(rs[0][0]).to eq 1
+    expect(rs[0]["id"]).to eq 1
+    #   FETCH_OBJ
+    rs.fetchMode = Transactd::FETCH_OBJ
+    expect(rs.fetchMode).to eq Transactd::FETCH_OBJ
+    expect(rs.size()).to eq 9
+    expect(rs[0].id).to eq 1
+    expect(rs[0].名前).to eq "1 user"
+    #   FETCH_USR_CLASS
+    rs.fetchMode = Transactd::FETCH_USR_CLASS
+    rs.fetchClass = User
+    rs.ctorArgs = ["1", "2", "3"]
+    expect(rs.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    expect(rs.size()).to eq 9
+    expect(rs[1].id).to eq 2
+    expect(rs[1].名前).to eq "2 user"
+    expect(rs[0].a).to eq "1"
+    expect(rs[0].b).to eq "2"
+    expect(rs[0].c).to eq "3"
+    at.release
+    db.close()
+  end
+  it 'fetchMode, alias and UTF-8 field name' do
+    Transactd::field_value_mode = Transactd::FIELD_VALUE_MODE_VALUE
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    # table
+    tb = db.openTable("user")
+    expect(tb.stat()).to eq 0
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb.setAlias("名前", "名前2")
+    expect(tb.stat()).to eq 0
+    #   FETCH_OBJ (remove_original_name)
+    tb.fetchMode = Transactd::FETCH_OBJ
+    expect(tb.fetchMode).to eq Transactd::FETCH_OBJ
+    usr = tb.fields()
+    expect(usr.id).to eq 1
+    expect(usr.respond_to?(:"名前")).to be false
+    expect(usr.respond_to?(:"名前2")).to be true
+    expect(usr.名前2).to eq "1 user"
+    #   FETCH_USR_CLASS
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    tb.fetchClass = User
+    tb.ctorArgs = ["1", "2", "3"]
+    #     define_original_name
+    User.reset_class
+    User.alias_attribute("名前2", "名前")
+    User.define_original_name
+    usr = tb.fields()
+    expect(usr.id).to eq 1
+    expect(usr.respond_to?(:"名前")).to be true
+    expect(usr.respond_to?(:"名前2")).to be true
+    expect(usr.名前).to eq "1 user"
+    expect(usr.名前2).to eq "1 user"
+    expect(usr.a).to eq "1"
+    expect(usr.b).to eq "2"
+    expect(usr.c).to eq "3"
+    #     remove_original_name
+    User.reset_class
+    User.alias_attribute("名前2", "名前")
+    User.remove_original_name
+    usr = tb.fields()
+    expect(usr.id).to eq 1
+    expect(usr.respond_to?(:"名前")).to be false
+    expect(usr.respond_to?(:"名前2")).to be true
+    expect(usr.名前2).to eq "1 user"
+    expect(usr.a).to eq "1"
+    expect(usr.b).to eq "2"
+    expect(usr.c).to eq "3"
+    tb.close
+    # activeTable
+    at = Transactd::ActiveTable.new(db, "user")
+    at.alias("名前", "名前2")
+    q = Transactd::Query.new()
+    q.where("id", "<", 10)
+    rs = at.index(0).keyValue(0).read(q)
+    expect(rs.size()).to eq 9
+    #   FETCH_OBJ (remove_original_name)
+    rs.fetchMode = Transactd::FETCH_OBJ
+    expect(rs.fetchMode).to eq Transactd::FETCH_OBJ
+    expect(rs[0].id).to eq 1
+    expect(rs[0].respond_to?(:"名前")).to be false
+    expect(rs[0].respond_to?(:"名前2")).to be true
+    expect(rs[0].名前2).to eq "1 user"
+    #   FETCH_USR_CLASS
+    rs.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(rs.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    rs.fetchClass = User
+    rs.ctorArgs = ["1", "2", "3"]
+    #     define_original_name
+    User.reset_class
+    User.alias_attribute("名前2", "名前")
+    User.define_original_name
+    expect(rs[0].id).to eq 1
+    expect(rs[0].respond_to?(:"名前")).to be true
+    expect(rs[0].respond_to?(:"名前2")).to be true
+    expect(rs[0].名前).to eq "1 user"
+    expect(rs[0].名前2).to eq "1 user"
+    #     remove_original_name
+    User.reset_class
+    User.alias_attribute("名前2", "名前")
+    User.remove_original_name
+    expect(rs[0].id).to eq 1
+    expect(rs[0].respond_to?(:"名前")).to be false
+    expect(rs[0].respond_to?(:"名前2")).to be true
+    expect(rs[0].名前2).to eq "1 user"
+    at.release
+    db.close
+  end
+  it 'set_value_by_object, alias and UTF-8 field name' do
+    Transactd::field_value_mode = Transactd::FIELD_VALUE_MODE_VALUE
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    # table
+    tb = db.openTable("user")
+    expect(tb.stat()).to eq 0
+    #   FETCH_OBJ, no alias
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields()
+    tb.fetchMode = Transactd::FETCH_OBJ
+    expect(tb.fetchMode).to eq Transactd::FETCH_OBJ
+    usr = tb.fields()
+    expect(usr.名前).to eq "1 user"
+    expect(usr.respond_to?(:"名前2")).to be false
+    usr.名前 = "1 ユーザー"
+    rec.set_value_by_object(usr)
+    usr2 = tb.fields()
+    expect(usr2.名前).to eq "1 ユーザー"
+    expect(usr2.respond_to?(:"名前2")).to be false
+    #   FETCH_USR_CLASS, no alias
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields()
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    tb.fetchClass = User
+    tb.ctorArgs = ["1", "2", "3"]
+    User.reset_class
+    User.remove_original_name
+    usr = tb.fields()
+    expect(usr.名前).to eq "1 user"
+    expect(usr.respond_to?(:"名前2")).to be false
+    usr.名前 = "1 ユーザー"
+    rec.set_value_by_object(usr)
+    usr2 = tb.fields()
+    expect(usr2.名前).to eq "1 ユーザー"
+    expect(usr2.respond_to?(:"名前2")).to be false
+    #   FETCH_OBJ, with alias
+    tb.setAlias("名前", "名前2")
+    expect(tb.stat()).to eq 0
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields()
+    tb.fetchMode = Transactd::FETCH_OBJ
+    expect(tb.fetchMode).to eq Transactd::FETCH_OBJ
+    usr = tb.fields()
+    expect(usr.respond_to?(:"名前")).to be false
+    expect(usr.名前2).to eq "1 user"
+    usr.名前2 = "1 ユーザー"
+    rec.set_value_by_object(usr)
+    usr2 = tb.fields()
+    expect(usr2.respond_to?(:"名前")).to be false
+    expect(usr2.名前2).to eq "1 ユーザー"
+    #   FETCH_USR_CLASS, with alias, remove_original_name
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields()
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    tb.fetchClass = User
+    tb.ctorArgs = ["1", "2", "3"]
+    User.reset_class
+    User.alias_attribute("名前2", "名前")
+    User.remove_original_name
+    usr = tb.fields()
+    expect(usr.respond_to?(:"名前")).to be false
+    expect(usr.名前2).to eq "1 user"
+    usr.名前2 = "1 ユーザー"
+    rec.set_value_by_object(usr)
+    usr2 = tb.fields()
+    expect(usr2.respond_to?(:"名前")).to be false
+    expect(usr2.名前2).to eq "1 ユーザー"
+    #   FETCH_USR_CLASS, with alias, define_original_name
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields()
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    tb.fetchClass = User
+    tb.ctorArgs = ["1", "2", "3"]
+    User.reset_class
+    User.alias_attribute("名前2", "名前")
+    User.define_original_name
+    usr = tb.fields()
+    expect(usr.名前).to eq "1 user"
+    expect(usr.名前2).to eq "1 user"
+    usr.名前2 = "1 ユーザー 名前2"
+    rec.set_value_by_object(usr)
+    usr2 = tb.fields()
+    expect(usr2.名前).to eq "1 ユーザー 名前2"
+    expect(usr2.名前2).to eq "1 ユーザー 名前2"
+    usr.名前 = "1 ユーザー 名前"
+    rec.set_value_by_object(usr)
+    usr3 = tb.fields()
+    expect(usr3.名前).to eq "1 ユーザー 名前"
+    expect(usr3.名前2).to eq "1 ユーザー 名前"
+    tb.close
+    # activeTable
+    at = Transactd::ActiveTable.new(db, "user")
+    q = Transactd::Query.new()
+    q.where("id", "<", 10)
+    #   FETCH_OBJ, no alias
+    rs = at.index(0).keyValue(0).read(q)
+    expect(rs.size()).to eq 9
+    rs.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(rs.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = rs[0]
+    rs.fetchMode = Transactd::FETCH_OBJ
+    expect(rs.fetchMode).to eq Transactd::FETCH_OBJ
+    usr = rs[0]
+    expect(usr.名前).to eq "1 user"
+    expect(usr.respond_to?(:"名前2")).to be false
+    usr.名前 = "1 ユーザー"
+    rec.set_value_by_object(usr)
+    usr2 = rs[0]
+    expect(usr2.名前).to eq "1 ユーザー"
+    expect(usr2.respond_to?(:"名前2")).to be false
+    #   FETCH_USR_CLASS, no alias
+    rs = at.index(0).keyValue(0).read(q)
+    expect(rs.size()).to eq 9
+    rs.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(rs.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = rs[0]
+    rs.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(rs.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    rs.fetchClass = User
+    rs.ctorArgs = ["1", "2", "3"]
+    User.reset_class
+    User.remove_original_name
+    usr = rs[0]
+    expect(usr.名前).to eq "1 user"
+    expect(usr.respond_to?(:"名前2")).to be false
+    usr.名前 = "1 ユーザー"
+    rec.set_value_by_object(usr)
+    usr2 = rs[0]
+    expect(usr2.名前).to eq "1 ユーザー"
+    expect(usr2.respond_to?(:"名前2")).to be false
+    #   FETCH_OBJ, with alias
+    at.alias("名前", "名前2")
+    rs = at.index(0).keyValue(0).read(q)
+    expect(rs.size()).to eq 9
+    rs.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(rs.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = rs[0]
+    rs.fetchMode = Transactd::FETCH_OBJ
+    expect(rs.fetchMode).to eq Transactd::FETCH_OBJ
+    usr = rs[0]
+    expect(usr.respond_to?(:"名前")).to be false
+    expect(usr.名前2).to eq "1 user"
+    usr.名前2 = "1 ユーザー"
+    rec.set_value_by_object(usr)
+    usr2 = rs[0]
+    expect(usr2.respond_to?(:"名前")).to be false
+    expect(usr2.名前2).to eq "1 ユーザー"
+    #   FETCH_USR_CLASS, with alias, remove_original_name
+    rs = at.index(0).keyValue(0).read(q)
+    expect(rs.size()).to eq 9
+    rs.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(rs.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = rs[0]
+    rs.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(rs.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    rs.fetchClass = User
+    rs.ctorArgs = ["1", "2", "3"]
+    User.reset_class
+    User.alias_attribute("名前2", "名前")
+    User.remove_original_name
+    usr = rs[0]
+    expect(usr.respond_to?(:"名前")).to be false
+    expect(usr.名前2).to eq "1 user"
+    usr.名前2 = "1 ユーザー"
+    rec.set_value_by_object(usr)
+    usr2 = rs[0]
+    expect(usr2.respond_to?(:"名前")).to be false
+    expect(usr2.名前2).to eq "1 ユーザー"
+    #   FETCH_USR_CLASS, with alias, define_original_name
+    rs = at.index(0).keyValue(0).read(q)
+    expect(rs.size()).to eq 9
+    rs.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(rs.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = rs[0]
+    rs.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(rs.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    rs.fetchClass = User
+    rs.ctorArgs = ["1", "2", "3"]
+    User.reset_class
+    User.alias_attribute("名前2", "名前")
+    User.define_original_name
+    usr = rs[0]
+    expect(usr.名前).to eq "1 user"
+    expect(usr.名前2).to eq "1 user"
+    usr.名前2 = "1 ユーザー 名前2"
+    rec.set_value_by_object(usr)
+    usr2 = rs[0]
+    expect(usr2.名前).to eq "1 ユーザー 名前2"
+    expect(usr2.名前2).to eq "1 ユーザー 名前2"
+    usr.名前 = "1 ユーザー 名前"
+    rec.set_value_by_object(usr)
+    usr3 = rs[0]
+    expect(usr3.名前).to eq "1 ユーザー 名前"
+    expect(usr3.名前2).to eq "1 ユーザー 名前"
+    at.release
+    db.close
+  end
+  it 'set_ailas' do
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    tb = db.openTable("user")
+    expect(tb.stat()).to eq 0
+    tb.setAlias("名前", "name")
+    tb.setAlias("id", "user_id")
+    expect(tb.fieldNumByName("user_id")).to eq 0
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    User.reset_class
+    User.alias_attribute("name", "名前")
+    User.alias_attribute("user_id", "id")
+    User.define_original_name
+    tb.fetchClass = User
+    tb.ctorArgs = ["1", "2", "3"]
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    usr = tb.fields()
+    expect(usr.id).to eq 1
+    expect(usr.user_id).to eq 1
+    expect(usr.名前).to eq "1 user"
+    expect(usr.name).to eq "1 user"
+    q = Transactd::Query.new()
+    q.select("name").where("id", "<", 10)
+    tb.setQuery(q)
+    tb.clearBuffer()
+    users = tb.findAll()
+    expect(users.length).to eq 9
+    expect(users[0].name).to eq "1 user"
+    tb.close()
+    db.close()
+  end
+  it 'CRUD operations with object' do
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    tb = db.openTable("user")
+    expect(tb.stat()).to eq 0
+    tb.setAlias("名前", "name")
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    User.reset_class
+    tb.fetchClass = User
+    tb.ctorArgs = ["1", "2", "3"]
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    # Insert
+    usr = tb.fields()
+    usr.id = 0
+    usr.name = 'test_insertObject'
+    expect(tb.insert_by_object(usr)).to eq true
+    tb.seekLast()
+    usr = tb.fields()
+    expect(usr.name).to eq 'test_insertObject'
+    expect(usr.id).to eq 1001
+    # Update
+    usr.name = 'test_UpdateObject'
+    expect(tb.update_by_object(usr)).to eq true
+    usr.name = ''
+    # Read
+    expect(tb.read_by_object(usr)).to eq true
+    expect(usr.name).to eq 'test_UpdateObject'
+    expect(usr.id).to eq 1001
+    row = tb.getRecord()
+    row.set_value_by_object(usr)
+    usr2 = tb.fields()
+    expect(usr2.a).to eq usr.a
+    expect(usr2.b).to eq usr.b
+    expect(usr2.c).to eq usr.c
+    expect(usr2.id).to eq usr.id
+    expect(usr2.name).to eq usr.name
+    expect(usr2.group).to eq usr.group
+    expect(usr2.tel).to eq usr.tel
+    expect(usr2.update_datetime).to eq usr.update_datetime
+    expect(usr2.create_datetime).to eq usr.create_datetime
+    # Delete
+    expect(tb.delete_by_object(usr)).to eq true
+    tb.seekLast()
+    usr = tb.fields()
+    expect(usr.id).to eq 1000
+    tb.close
+    db.close
+  end
+  it 'test UCC' do
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    tb = db.openTable("user")
+    tb2 = db.openTable("user")
+    # test ChangeCurrentCc
+    #   updateConflictCheck true
+    db.beginTrn()
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb2.seekFirst()
+    expect(tb2.stat()).to eq 0
+    tb.setFV("名前", 'John')
+    tb.update()
+    expect(tb.stat()).to eq 0
+    tb2.setFV("名前", 'mike')
+    tb2.setUpdateConflictCheck(true)
+    expect(tb2.updateConflictCheck()).to eq true
+    tb2.update(Transactd::Nstable::ChangeCurrentCc)
+    expect(tb2.stat()).to eq Transactd::STATUS_CHANGE_CONFLICT
+    db.abortTrn()
+    #   updateConflictCheck false
+    db.beginTrn()
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb2.seekFirst()
+    expect(tb2.stat()).to eq 0
+    tb.setFV("名前", 'John')
+    tb.update()
+    expect(tb.stat()).to eq 0
+    tb2.setFV("名前", 'mike')
+    tb2.setUpdateConflictCheck(false)
+    expect(tb2.updateConflictCheck()).to eq false
+    tb2.update(Transactd::Nstable::ChangeCurrentCc)
+    expect(tb2.stat()).to eq 0
+    db.abortTrn()
+    # test ChangeInKey
+    #   updateConflictCheck true
+    db.beginTrn()
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb2.seekFirst()
+    expect(tb2.stat()).to eq 0
+    tb.setFV("名前", 'John')
+    tb.update()
+    expect(tb.stat()).to eq 0
+    tb2.setFV("名前", 'mike')
+    tb2.setUpdateConflictCheck(true)
+    expect(tb2.updateConflictCheck()).to eq true
+    tb2.update(Transactd::Nstable::ChangeInKey)
+    expect(tb2.stat()).to eq Transactd::STATUS_CHANGE_CONFLICT
+    db.abortTrn()
+    #   updateConflictCheck false
+    db.beginTrn()
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb2.seekFirst()
+    expect(tb2.stat()).to eq 0
+    tb.setFV("名前", 'John')
+    tb.update()
+    expect(tb.stat()).to eq 0
+    tb2.setFV("名前", 'mike')
+    tb2.setUpdateConflictCheck(false)
+    expect(tb2.updateConflictCheck()).to eq false
+    tb2.update(Transactd::Nstable::ChangeInKey)
+    expect(tb2.stat()).to eq 0
+    db.abortTrn()
+    tb.close
+    tb2.close
+    db.close
+  end
+  it 'test transfer' do
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    tb = db.openTable("user")
+    expect(tb.stat()).to eq 0
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    tb.setAlias("名前", "name")
+    usr = UserT.new()
+    usr.id = 5
+    expect(tb.read_by_object(usr)).to be true
+    expect(usr.id).to eq 5
+    expect(usr.phone.number.tel).to eq '0236-99-9999'
+    UserT.setTransferMap(1)
+    usr.id = 5
+    expect(tb.read_by_object(usr)).to be true # No error
+    expect(usr.id).to eq 5
+    expect(usr.phone2).to be nil
+    UserT.setTransferMap(2)
+    usr.id = 5
+    expect(tb.read_by_object(usr)).to be true # No error
+    expect(usr.id).to eq 5
+    expect(usr.phone.number2).to be nil
+    tb.close
+    db.close
+  end
+  it 'test with object option' do
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    tb = db.openTable("user")
+    expect(tb.stat()).to eq 0
+    tb.setAlias("名前", "name")
+    usr = UserT.new()
+    # read option (key number)
+    tb.setKeyNum(0)
+    usr.id = 5
+    expect(tb.read_by_object(usr, 2)).to be false
+    expect(tb.keyNum()).to eq 2
+    expect(tb.read_by_object(usr)).to be true
+    expect(tb.keyNum()).to eq 0
+    # update option (eUpdateType)
+    expect(tb.read_by_object(usr, 2)).to be false # No currency
+    expect(tb.update_by_object(usr, Transactd::Nstable::ChangeCurrentCc)).to eq false
+    expect(tb.update_by_object(usr)).to be true  # default value  Nstable::changeInKey
+    # delete option
+    usr.id = 0
+    expect(tb.insert_by_object(usr)).to be true # Insert id = 1001
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    tb.fetchClass = UserT
+    tb.seekLast
+    expect(tb.stat).to eq 0
+    usr = tb.getRow
+    id = usr.id
+    usr.id = 1005
+    expect(tb.read_by_object(usr)).to be false # No currency
+    usr.id = id
+    tb.setKeyNum(2)
+    expect(tb.delete_by_object(usr, false)).to be false # inKey
+    expect(tb.delete_by_object(usr)).to be true  # default value true
+    tb.close
+    db.close
+  end
+  it 'test transfer_map on define and read' do
+    Transactd::field_value_mode = Transactd::FIELD_VALUE_MODE_VALUE
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    tb = db.openTable("user")
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    tb.fetchClass = User
+    tb.ctorArgs = ["1", "2", "3"]
+    # without alias, without nest
+    User.reset_class
+    User.transfer_map = {
+      update_datetime: :datetime,
+      create_datetime: :datetime
+    }
+    tb.seekFirst
+    expect(tb.stat()).to eq 0
+    rec = tb.fields
+    expect(rec.id).to eq 1
+    expect(rec.名前).to eq "1 user"
+    expect(rec.a).to eq "1"
+    expect(rec.b).to eq "2"
+    expect(rec.c).to eq "3"
+    expect(rec.respond_to?(:update_datetime)).to be false
+    expect(rec.respond_to?(:create_datetime)).to be false
+    expect(rec.datetime.update_datetime.nil?).to be false
+    expect(rec.datetime.create_datetime.nil?).to be false
+    expect(rec.aliased_datetime.empty?).to be true
+    expect(rec.nest.datetime.empty?).to be true
+    expect(rec.nest.aliased_datetime.empty?).to be true
+    # without alias, with nest
+    User.reset_class
+    User.transfer_map = {
+      update_datetime: [:nest, :datetime],
+      create_datetime: [:nest, :datetime]
+    }
+    tb.seekFirst
+    expect(tb.stat()).to eq 0
+    rec = tb.fields
+    expect(rec.id).to eq 1
+    expect(rec.名前).to eq "1 user"
+    expect(rec.a).to eq "1"
+    expect(rec.b).to eq "2"
+    expect(rec.c).to eq "3"
+    expect(rec.respond_to?(:update_datetime)).to be false
+    expect(rec.respond_to?(:create_datetime)).to be false
+    expect(rec.datetime.empty?).to be true
+    expect(rec.aliased_datetime.empty?).to be true
+    expect(rec.nest.datetime.update_datetime.nil?).to be false
+    expect(rec.nest.datetime.create_datetime.nil?).to be false
+    expect(rec.nest.aliased_datetime.empty?).to be true
+    # with alias, without nest
+    tb.setAlias("update_datetime", "update")
+    tb.setAlias("create_datetime", "create")
+    User.reset_class
+    User.alias_attribute("update", "update_datetime")
+    User.alias_attribute("create", "create_datetime")
+    User.transfer_map = {
+      update: :aliased_datetime,
+      create: :aliased_datetime
+    }
+    tb.seekFirst
+    expect(tb.stat()).to eq 0
+    rec = tb.fields
+    expect(rec.id).to eq 1
+    expect(rec.名前).to eq "1 user"
+    expect(rec.a).to eq "1"
+    expect(rec.b).to eq "2"
+    expect(rec.c).to eq "3"
+    expect(rec.respond_to?(:update_datetime)).to be false
+    expect(rec.respond_to?(:create_datetime)).to be false
+    expect(rec.respond_to?(:update)).to be false
+    expect(rec.respond_to?(:create)).to be false
+    expect(rec.datetime.empty?).to be true
+    expect(rec.aliased_datetime.update.nil?).to be false
+    expect(rec.aliased_datetime.create.nil?).to be false
+    expect(rec.nest.datetime.empty?).to be true
+    expect(rec.nest.aliased_datetime.empty?).to be true
+    # with alias, with nest
+    User.reset_class
+    User.alias_attribute("update", "update_datetime")
+    User.alias_attribute("create", "create_datetime")
+    User.transfer_map = {
+      update: [:nest, :aliased_datetime],
+      create: [:nest, :aliased_datetime]
+    }
+    tb.seekFirst
+    expect(tb.stat()).to eq 0
+    rec = tb.fields
+    expect(rec.id).to eq 1
+    expect(rec.名前).to eq "1 user"
+    expect(rec.a).to eq "1"
+    expect(rec.b).to eq "2"
+    expect(rec.c).to eq "3"
+    expect(rec.respond_to?(:update_datetime)).to be false
+    expect(rec.respond_to?(:create_datetime)).to be false
+    expect(rec.respond_to?(:update)).to be false
+    expect(rec.respond_to?(:create)).to be false
+    expect(rec.datetime.empty?).to be true
+    expect(rec.aliased_datetime.empty?).to be true
+    expect(rec.nest.datetime.empty?).to be true
+    expect(rec.nest.aliased_datetime.update.nil?).to be false
+    expect(rec.nest.aliased_datetime.create.nil?).to be false
+    User.reset_class
+    tb.close
+    db.close
+  end
+  it 'test transfer_map on define and set_value_by_object' do
+    sample_datetime = "2016-11-01 12:34:56"
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    tb = db.openTable("user")
+    tb.fetchClass = User
+    tb.ctorArgs = ["1", "2", "3"]
+    # without alias, without nest
+    User.reset_class
+    User.transfer_map = {
+      update_datetime: :datetime,
+      create_datetime: :datetime
+    }
+    tb.seekFirst
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    obj = tb.fields
+    expect(obj.id).to eq 1
+    expect(obj.名前).to eq "1 user"
+    expect(obj.datetime.update_datetime.nil?).to be false
+    expect(obj.datetime.update_datetime).not_to start_with sample_datetime
+    obj.名前 = "1 ユーザー"
+    obj.datetime.update_datetime = sample_datetime
+    rec.set_value_by_object(obj)
+    obj2 = tb.fields
+    expect(obj2.id).to eq 1
+    expect(obj2.名前).to eq "1 ユーザー"
+    expect(obj2.datetime.update_datetime.nil?).to be false
+    expect(obj2.datetime.update_datetime).to start_with sample_datetime
+    # without alias, with nest
+    User.reset_class
+    User.transfer_map = {
+      update_datetime: [:nest, :datetime],
+      create_datetime: [:nest, :datetime]
+    }
+    tb.seekFirst
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    obj = tb.fields
+    expect(obj.id).to eq 1
+    expect(obj.名前).to eq "1 user"
+    expect(obj.nest.datetime.update_datetime.nil?).to be false
+    expect(obj.nest.datetime.update_datetime).not_to start_with sample_datetime
+    obj.名前 = "1 ユーザー"
+    obj.nest.datetime.update_datetime = sample_datetime
+    rec.set_value_by_object(obj)
+    obj2 = tb.fields
+    expect(obj2.id).to eq 1
+    expect(obj2.名前).to eq "1 ユーザー"
+    expect(obj2.nest.datetime.update_datetime.nil?).to be false
+    expect(obj2.nest.datetime.update_datetime).to start_with sample_datetime
+    # with alias, without nest
+    tb.setAlias("update_datetime", "update")
+    tb.setAlias("create_datetime", "create")
+    User.reset_class
+    User.alias_attribute("update", "update_datetime")
+    User.alias_attribute("create", "create_datetime")
+    User.transfer_map = {
+      update: :aliased_datetime,
+      create: :aliased_datetime
+    }
+    tb.seekFirst
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    obj = tb.fields
+    expect(obj.id).to eq 1
+    expect(obj.名前).to eq "1 user"
+    expect(obj.aliased_datetime.update.nil?).to be false
+    expect(obj.aliased_datetime.update).not_to start_with sample_datetime
+    obj.名前 = "1 ユーザー"
+    obj.aliased_datetime.update = sample_datetime
+    rec.set_value_by_object(obj)
+    obj2 = tb.fields
+    expect(obj2.id).to eq 1
+    expect(obj2.名前).to eq "1 ユーザー"
+    expect(obj2.aliased_datetime.update.nil?).to be false
+    expect(obj2.aliased_datetime.update).to start_with sample_datetime
+    # with alias, with nest
+    User.reset_class
+    User.alias_attribute("update", "update_datetime")
+    User.alias_attribute("create", "create_datetime")
+    User.transfer_map = {
+      update: [:nest, :aliased_datetime],
+      create: [:nest, :aliased_datetime]
+    }
+    tb.seekFirst
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    obj = tb.fields
+    expect(obj.id).to eq 1
+    expect(obj.名前).to eq "1 user"
+    expect(obj.nest.aliased_datetime.update.nil?).to be false
+    expect(obj.nest.aliased_datetime.update).not_to start_with sample_datetime
+    obj.名前 = "1 ユーザー"
+    obj.nest.aliased_datetime.update = sample_datetime
+    rec.set_value_by_object(obj)
+    obj2 = tb.fields
+    expect(obj2.id).to eq 1
+    expect(obj2.名前).to eq "1 ユーザー"
+    expect(obj2.nest.aliased_datetime.update.nil?).to be false
+    expect(obj2.nest.aliased_datetime.update).to start_with sample_datetime
+    User.reset_class
+    tb.close
+    db.close
+  end
+  it 'test transfer_map with UTF-8 field name and alias' do
+    Transactd::field_value_mode = Transactd::FIELD_VALUE_MODE_VALUE
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    tb = db.openTable("user")
+    tb.fetchClass = User
+    tb.ctorArgs = ["1", "2", "3"]
+    # without alias
+    User.reset_class
+    User.transfer_map = {
+      名前: [:nest_name, :name_holder]
+    }
+    tb.seekFirst
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    obj = tb.fields
+    expect(obj.id).to eq 1
+    expect(obj.respond_to?(:"名前")).to be false
+    expect(obj.nest_name.name_holder.名前.nil?).to be false
+    expect(obj.nest_name.name_holder.名前).to eq "1 user"
+    obj.nest_name.name_holder.名前 = "1 ユーザー"
+    rec.set_value_by_object(obj)
+    obj2 = tb.fields
+    expect(obj2.id).to eq 1
+    expect(obj2.respond_to?(:"名前")).to be false
+    expect(obj2.nest_name.name_holder.名前.nil?).to be false
+    expect(obj2.nest_name.name_holder.名前).to eq "1 ユーザー"
+    # with alias
+    tb.setAlias("名前", "name")
+    User.reset_class
+    User.alias_attribute("name", "名前")
+    User.transfer_map = {
+      name: [:nest_name, :name_holder]
+    }
+    tb.seekFirst
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    obj = tb.fields
+    expect(obj.id).to eq 1
+    expect(obj.respond_to?(:name)).to be false
+    expect(obj.respond_to?(:"名前")).to be false
+    expect(obj.nest_name.name_holder.name.nil?).to be false
+    expect(obj.nest_name.name_holder.name).to eq "1 user"
+    obj.nest_name.name_holder.name = "1 ユーザー"
+    rec.set_value_by_object(obj)
+    obj2 = tb.fields
+    expect(obj2.id).to eq 1
+    expect(obj2.respond_to?(:name)).to be false
+    expect(obj2.respond_to?(:"名前")).to be false
+    expect(obj2.nest_name.name_holder.name.nil?).to be false
+    expect(obj2.nest_name.name_holder.name).to eq "1 ユーザー"
+    # to change alias...
+    tb.close
+    tb = db.openTable("user")
+    tb.fetchClass = User
+    tb.ctorArgs = ["1", "2", "3"]
+    # with UTF-8 string alias
+    tb.setAlias("名前", "名前2")
+    User.reset_class
+    User.alias_attribute("名前2", "名前")
+    User.transfer_map = {
+      名前2: [:nest_name, :name_holder]
+    }
+    tb.seekFirst
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
+    expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
+    rec = tb.fields
+    expect(tb.stat()).to eq 0
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    obj = tb.fields
+    expect(obj.id).to eq 1
+    expect(obj.respond_to?(:"名前2")).to be false
+    expect(obj.respond_to?(:"名前")).to be false
+    expect(obj.nest_name.name_holder.名前2.nil?).to be false
+    expect(obj.nest_name.name_holder.名前2).to eq "1 user"
+    obj.nest_name.name_holder.名前2 = "1 ユーザー"
+    rec.set_value_by_object(obj)
+    obj2 = tb.fields
+    expect(obj2.id).to eq 1
+    expect(obj2.respond_to?(:"名前2")).to be false
+    expect(obj2.respond_to?(:"名前")).to be false
+    expect(obj2.nest_name.name_holder.名前2.nil?).to be false
+    expect(obj2.nest_name.name_holder.名前2).to eq "1 ユーザー"
+    User.reset_class
+    tb.close
+    db.close
+  end
+  it 'insert_object with transfer_map' do
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    tb = db.openTable("user")
+    expect(tb.stat()).to eq 0
+    tb.fetchClass = User
+    tb.ctorArgs = ["1", "2", "3"]
+    tb.setAlias("名前", "名前2")
+    tb.setAlias("update_datetime", "update")
+    tb.seekFirst()
+    expect(tb.stat()).to eq 0
+    # use alias and transfer_map
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
+    expect(tb.fetchMode).to eq Transactd::FETCH_USR_CLASS
+    User.reset_class
+    User.alias_attribute("名前2", "名前")
+    User.alias_attribute("update", "update_datetime")
+    User.transfer_map = {
+      名前2: [:nest_name, :name_holder],
+      update: [:nest, :aliased_datetime],
+      create_datetime: [:nest, :datetime]
+    }
+    usr = tb.fields()
+    expect(usr.respond_to?(:"名前")).to be false
+    expect(usr.respond_to?(:"名前2")).to be false
+    expect(usr.respond_to?(:update_datetime)).to be false
+    expect(usr.respond_to?(:create_datetime)).to be false
+    expect(usr.respond_to?(:update)).to be false
+    expect(usr.respond_to?(:create)).to be false
+    expect(usr.nest_name.name_holder.名前.nil?).to be true
+    expect(usr.nest_name.name_holder.name.nil?).to be true
+    expect(usr.nest_name.name_holder.名前2.nil?).to be false
+    expect(usr.nest.aliased_datetime.update.nil?).to be false
+    expect(usr.nest.aliased_datetime.create.nil?).to be true
+    expect(usr.nest.datetime.update_datetime.nil?).to be true
+    expect(usr.nest.datetime.create_datetime.nil?).to be false
+    usr.id = 0
+    usr.nest_name.name_holder.名前2 = 'test_insert_transfer'
+    usr.nest.aliased_datetime.update = '2016-11-02 12:34:56'
+    tb.insert_by_object(usr)
+    tb.seekLast()
+    usr = tb.fields()
+    expect(usr.nest_name.name_holder.名前2).to eq 'test_insert_transfer'
+    expect(usr.id).to eq 1003
+    row = tb.getRecord()
+    row.set_value_by_object(usr)
+    usr2 = tb.fields()
+    expect(usr2.a).to eq usr.a
+    expect(usr2.b).to eq usr.b
+    expect(usr2.c).to eq usr.c
+    expect(usr2.id).to eq usr.id
+    expect(usr2.nest_name.name_holder.名前2).to eq usr.nest_name.name_holder.名前2
+    expect(usr2.group).to eq usr.group
+    expect(usr2.tel).to eq usr.tel
+    expect(usr2.nest.aliased_datetime.update).to eq usr.nest.aliased_datetime.update
+    expect(usr2.nest.datetime.create_datetime).to start_with usr.nest.datetime.create_datetime
+    tb.close
+    db.close
   end
 end

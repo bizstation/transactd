@@ -314,6 +314,7 @@ public:
 //------------------------------------------------------------------------------
 //       class fieldShare
 //------------------------------------------------------------------------------
+
 struct Imple
 {
     stringConverter* cv;
@@ -357,6 +358,11 @@ void fieldShare::blobPushBack(char* p)
 void fieldShare::blobClear()
 {
     m_imple->blobs.clear();
+}
+
+void fieldShare::blobResize(size_t size)
+{
+    m_imple->blobs.resize(size);
 }
 
 //------------------------------------------------------------------------------
@@ -463,21 +469,27 @@ void fielddefs::push_back(const fielddef* p)
         ++m_imple->mysqlnullEnable;
     // reset update indicator
     pp->enableFlags.bitE = false;
+
+    // For activeTable need replacing name
     aliasing(pp);
     m_imple->map[pp->name()] = index;
 }
 
 void fielddefs::remove(int index)
 {
-    m_imple->map.erase(m_imple->fields[index].name());
     m_imple->fields.erase(m_imple->fields.begin() + index);
     boost::unordered_map<std::_tstring, int>::iterator it =
         m_imple->map.begin();
     while (it != m_imple->map.end())
     {
-        if ((*it).second > index)
-            (*it).second--;
-        ++it;
+        if ((*it).second == index)
+            it = m_imple->map.erase(it);
+        else
+        {
+            if ((*it).second > index)
+                (*it).second--;
+            ++it;
+        }
     }
 }
 
@@ -506,6 +518,14 @@ void fielddefs::resetUpdateIndicator()
 bool fielddefs::checkIndex(int index) const
 {
     return (index >= 0 && index < (int)m_imple->fields.size());
+}
+
+void fielddefs::addAliasName(int index, const _TCHAR* name)
+{
+    assert(checkIndex(index));
+    //replace original name
+    m_imple->fields[index].setName(name);
+    m_imple->map[name] = index;
 }
 
 int fielddefs::indexByName(const std::_tstring& name) const
@@ -544,16 +564,20 @@ size_t fielddefs::totalFieldLen() const
     return fd.pos + fd.len + fd.nullbytes();
 }
 
-void fielddefs::addAllFileds(const tabledef* def)
+void fielddefs::addAllFields(const tabledef* def)
 {
     m_imple->fields.clear();
     m_imple->mysqlnullEnable = 0;
+    short blobCount = 0;
     for (int i = 0; i < def->fieldCount; ++i)
     {
         const fielddef* fd = &def->fieldDefs[i];
         push_back(fd);
         m_imple->fields[m_imple->fields.size() - 1].setPadCharDefaultSettings();
+        if (fd->isBlob())
+            ++blobCount;
     }
+    blobResize(blobCount);
 }
 
 void fielddefs::addSelectedFields(const table* tb)

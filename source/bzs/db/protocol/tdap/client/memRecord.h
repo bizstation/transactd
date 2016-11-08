@@ -59,7 +59,7 @@ public:
 #define ROW_MEM_BLOCK_RESERVE 4
 
 #ifndef JOINLIMIT_PER_RECORD
-#define JOINLIMIT_PER_RECORD 0
+#define JOINLIMIT_PER_RECORD 14
 #endif
 #if (JOINLIMIT_PER_RECORD < 1)
 #define JOIN_UNLIMIT
@@ -141,7 +141,6 @@ protected:
     inline memoryRecord(fielddefs& fdinfo);
     memoryRecord(const memoryRecord& r);
     ~memoryRecord();
-    memoryRecord& operator=(const memoryRecord& r);
     void copyToBuffer(table* tb, bool updateOnly = false) const;
     inline void copyFromBuffer(const table* tb)
     {
@@ -153,6 +152,7 @@ protected:
     /** @endcond */
 public:
     void clear(); // orverride
+    memoryRecord& operator=(const memoryRecord& r); // For SWIG
     static memoryRecord* create(fielddefs& fdinfo); // For SWIG
 };
 

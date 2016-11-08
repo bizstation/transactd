@@ -846,7 +846,12 @@ interface ITable : IDispatch
   HRESULT _stdcall GetFVbits([in] VARIANT Index, [out, retval] IBitset** Value);
   [id(0x000000EF)]
   HRESULT _stdcall GetCreateSql([out, retval] BSTR* retVal);
-
+  [propget, id(0x00000100)]
+  HRESULT _stdcall UpdateConflictCheck([out, retval] VARIANT_BOOL* retVal);
+  [id(0x00000101)]
+  HRESULT _stdcall SetUpdateConflictCheck([in] VARIANT_BOOL value,[out, retval] VARIANT_BOOL* retVal);
+  [id(0x00000102)]
+  HRESULT _stdcall SetAlias([in] BSTR orign,[in]  BSTR alias);
 };
 [
 	object,
@@ -1597,7 +1602,7 @@ interface ISortField : IDispatch
 interface ISortFields : IDispatch
 {
   [id(1)]
-  HRESULT _stdcall Add([in] BSTR Name, [in] VARIANT_BOOL asc);
+  HRESULT _stdcall Add([in] BSTR Name, [in] VARIANT_BOOL asc, [out, retval]ISortFields** retVal);
   [propget, id(2)]
   HRESULT _stdcall Size([out, retval] int* Value);
   [propget, id(0)]

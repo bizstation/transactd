@@ -180,6 +180,11 @@ recordset& recordset::reverse()
     return *this;
 }
 
+void recordset::reserve(size_t size)
+{
+    m_imple->reserve(size);
+}
+
 void recordset::appendField(const _TCHAR* name, int type, short len)
 {
     m_imple->appendField(name, type, len);
