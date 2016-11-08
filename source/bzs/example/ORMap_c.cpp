@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2014 BizStation Corp All rights reserved.
+   Copyright (C) 2014,2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -522,7 +522,7 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     users_orm users_hdr(m);
     ut.readMap(users_hdr, q);
 
-    /* Using clrient filter exsample.
+    /* Using client filter exsample.
        Set a client filter function or function object to read method.
     */
     ut.index(keynum_group).keyValue(find_group_id).read(users, q, isMatch);
