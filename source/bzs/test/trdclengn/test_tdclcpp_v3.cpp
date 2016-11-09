@@ -728,7 +728,7 @@ void testTimestamp(database* db)
             
             BOOST_CHECK_MESSAGE(fds[_T("fd10")].isNull() == true, "Timestamp2 not null" );
 
-            Sleep(1);
+            Sleep(10);
             tb->update();
             BOOST_CHECK_MESSAGE(tb->stat() == 0, "testTimestamp update stat = " << tb->stat());
             tb->seek();

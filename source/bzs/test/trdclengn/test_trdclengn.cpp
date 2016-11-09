@@ -5251,7 +5251,7 @@ void testBinaryFieldSchame()
     tbid = db->dbDef()->tableNumByName(_T("groups"));
     BOOST_CHECK(tbid > 0);
     fd =  &db->dbDef()->tableDefs(tbid)->fieldDefs[1];
-    BOOST_CHECK(fd->charsetIndex() == CHARSET_BIN);
+    BOOST_CHECK_MESSAGE(fd->charsetIndex() == CHARSET_BIN, "bad = " << fd->charsetIndex());
     db->close(true /* withDropDefaultSchema */);
 
 
