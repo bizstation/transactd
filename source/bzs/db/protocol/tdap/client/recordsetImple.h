@@ -527,8 +527,8 @@ public:
 
     inline iterator erase(const iterator& it) 
     { 
-        m_recordset[it - m_recordset.begin()]->release();
-        return m_recordset.erase(it); 
+        (*it)->release();
+        return m_recordset.erase(it);
     }
 
     inline void push_back(row_ptr r)

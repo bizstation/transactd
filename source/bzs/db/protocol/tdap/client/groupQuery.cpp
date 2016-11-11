@@ -237,6 +237,7 @@ struct recordsetQueryImple
         judgeFunc isMatchFunc;
         comp1Func compFunc;
         short index;
+        short cmpIndex;        // For CMPLOGICAL_FIELD only
         uchar_td compType;
         char combine;
         struct
@@ -313,8 +314,9 @@ void recordsetQuery::init(const fielddefs* fdinfo)
     {
         recordsetQueryImple::compItem itm;
         itm.index = fdinfo->indexByName(tokns[i].c_str());
-        if (itm.index >= 0)
-            itm.nullable = (*fdinfo)[itm.index].isNullable();
+        if (itm.index == -1)
+            THROW_BZS_ERROR_WITH_MSG(_T("recordsetQuery:Invalid field name ") + tokns[i]);
+        itm.nullable = (*fdinfo)[itm.index].isNullable();
         m_imple->compItems.push_back(itm);
         m_imple->compFields.push_back(&((*fdinfo)[itm.index]));
     }
@@ -328,13 +330,27 @@ void recordsetQuery::init(const fielddefs* fdinfo)
     {
         recordsetQueryImple::compItem& itm = m_imple->compItems[index];
         field fd = (*m_imple->row)[index];
-        fd = tokns[i + 2].c_str();
+
+        std::_tstring value = tokns[i + 2];
+        bool compField = (value.size() && (value[0] == _T('[')));
+        if (compField)
+        {
+            value.erase(value.begin());
+            value.erase(value.end() - 1);
+            itm.cmpIndex = fdinfo->indexByName(value);
+            if (itm.cmpIndex == -1)
+                THROW_BZS_ERROR_WITH_MSG(_T("recordsetQuery:Invalid field name ") + value);
+        }
+        else
+            fd = value.c_str();
         bool part = fd.isCompPartAndMakeValue();
         itm.compType = getFilterLogicTypeCode(tokns[i + 1].c_str());
-        eCompType log = (eCompType)(itm.compType & 0xf);
-        itm.nulllog = ((log == eIsNull) || (log == eIsNotNull));
+        if (compField)
+            itm.compType |= CMPLOGICAL_FIELD;
         if (!part)
             itm.compType |= CMPLOGICAL_VAR_COMP_ALL;
+        eCompType log = (eCompType)(itm.compType & 0xf);
+        itm.nulllog = ((log == eIsNull) || (log == eIsNotNull));
         fielddef& fdd = const_cast<fielddef&>(m_imple->compFields[index]);
         fdd.len = m_imple->compFields[index].compDataLen((const uchar_td*)fd.ptr(), part);
         uchar_td type = fdd.type; 
@@ -376,8 +392,12 @@ bool recordsetQuery::match(const row_ptr row) const
         if (nullJudge < 2)
             ret = (nullJudge == 0) ? true : false;
         else
-            ret = itm.isMatchFunc(itm.compFunc((const char*)f.ptr(), (const char*)((*m_imple->row)[i].ptr()), (*m_imple->row)[i].len()));
-
+        {
+            if (itm.compType & CMPLOGICAL_FIELD)
+                ret = itm.isMatchFunc(itm.compFunc((const char*)f.ptr(), (const char*)(*row)[itm.cmpIndex].ptr(), f.len()));
+            else
+                ret = itm.isMatchFunc(itm.compFunc((const char*)f.ptr(), (const char*)((*m_imple->row)[i].ptr()), (*m_imple->row)[i].len()));
+        }
         if (isEndComp(itm.combine, ret)) return ret;
     }
     assert(0);
