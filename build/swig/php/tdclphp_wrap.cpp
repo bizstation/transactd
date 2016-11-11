@@ -15662,7 +15662,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_seekKeyValue) {
 
     {
         if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&tb, SWIGTYPE_p_bzs__client__table, 0) < 0) {
-            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_findFirst. Expected SWIGTYPE_p_bzs__client__table");
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_seekKeyValue. Expected SWIGTYPE_p_bzs__client__table");
         }
     }
     if (!tb) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
