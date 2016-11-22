@@ -30840,7 +30840,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_findAll) {
     row = &tb->fields();
     tb->find(ftype);
 #ifndef ZEND_ENGINE_3
-    while(tb->stat() == 0 || (tb->stat() == STATUS_NOT_FOUND_TI && tb->fields().isInvalidRecord()))
+    while(tb->stat() == 0 || (tb->stat() == STATUS_NOT_FOUND_TI && row->isInvalidRecord()))
     {
         MAKE_STD_ZVAL(zrow);
         ret = copyValues(zrow, type, row, args[3], p TSRMLS_CC);
@@ -30852,7 +30852,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_findAll) {
             tb->findPrev();
     }
 #else
-    while (tb->stat() == 0 || (tb->stat() == STATUS_NOT_FOUND_TI && tb->fields().isInvalidRecord()))
+    while (tb->stat() == 0 || (tb->stat() == STATUS_NOT_FOUND_TI && row->isInvalidRecord()))
     {
         ret = copyValues(&zrow, type, row, args[3], p);
         if (ret) break;

@@ -229,6 +229,13 @@ public:
         }
     }
 
+    inline int currentRow()
+    {
+        if (m_filter->hasManyJoin())
+            return *((int*)(m_ptr + DATASIZE_BYTE));
+        return m_row;
+    }
+
     inline char* moveCurrentData(char* ptr, unsigned short& len, int& sqnum)
     {
         len = *((unsigned short*)ptr);
@@ -1011,8 +1018,8 @@ void table::doFind(ushort_td op, bool notIncCurrent)
         m_stat = m_impl->rc->seekMultiStat();
 
         /*If seek multi error, set keyvalue for keyValueDescription*/
-        if (m_stat != 0)
-            setSeekValueField(row);
+        if (m_stat != 0 && m_impl->filterPtr->isSeeksMode())
+            setSeekValueField(m_impl->rc->currentRow());
 
         // m_datalen = m_impl->rc->len();
         m_datalen = tableDef()->recordlen();
@@ -2109,6 +2116,8 @@ bool table::setSeekValueField(int row)
     const std::vector<client::seek>& keyValues = m_impl->filterPtr->seeks();
     keydef* kd = &tableDef()->keyDefs[(int)keyNum()];
     if (keyValues.size() % kd->segmentCount)
+        return false;
+    if (row >= keyValues.size())
         return false;
     // Check uniqe key
     if (kd->segments[0].flags.bit0)
