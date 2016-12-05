@@ -199,12 +199,6 @@ class recordsetImple
     /* for registerMemoryBlock temp data */
     size_t m_joinRows;
 
-    /*
-            for optimazing join.
-            If the first reading is using by unique key , set that field count.
-    */
-    short m_uniqueReadMaxField;
-
 public:
     typedef std::vector<row_ptr>::iterator iterator;
     typedef row_ptr item_type;
@@ -226,7 +220,7 @@ private:
         am->setParams(ptr, size, 0, true);
         m_memblock.push_back(boost::shared_ptr<autoMemory>(am, boost::bind(&autoMemory::release, _1)));
         unsigned char* p = am->ptr;
-        // copy fileds
+        // copy fields
         if (addtype & mra_nextrows)
         {
             if (addtype == mra_nextrows)
@@ -241,13 +235,6 @@ private:
             m_mra->setCurFirstField((int)m_fds->size());
             if (tb)
                 m_fds->addSelectedFields(tb);
-            if (tb && (addtype == mra_nojoin))
-            {
-                const keydef& kd = tb->tableDef()->keyDefs[(int)tb->keyNum()];
-                m_uniqueReadMaxField = (kd.segments[0].flags.bit0 == false)
-                                           ? (short)m_fds->size()
-                                           : 0;
-            }
         }
 
         *(am->endFieldIndex) = (short)m_fds->size();
@@ -339,15 +326,14 @@ private:
 public:
     inline recordsetImple()
         : m_fds(fielddefs::create(), boost::bind(&fielddefs::release, _1)),
-          m_joinRows(0), m_uniqueReadMaxField(0)
+          m_joinRows(0)
     {
         m_mra.reset(new multiRecordAlocatorImple(this));
     }
 
     inline recordsetImple(const recordsetImple& r)
         : m_fds(r.m_fds),m_mra(r.m_mra), m_recordset(r.m_recordset),
-          m_memblock(r.m_memblock), m_joinRows(r.m_joinRows),
-          m_uniqueReadMaxField(r.m_uniqueReadMaxField)
+          m_memblock(r.m_memblock), m_joinRows(r.m_joinRows)
     {
         for (size_t i = 0; i < m_recordset.size(); ++i)
             m_recordset[i]->addref();
@@ -370,7 +356,7 @@ public:
             m_recordset = r.m_recordset;
             m_memblock = r.m_memblock;
             m_joinRows = r.m_joinRows;
-            m_uniqueReadMaxField = r.m_uniqueReadMaxField;
+            //m_uniqueReadMaxField = r.m_uniqueReadMaxField;
             for (size_t i = 0; i < m_recordset.size(); ++i)
                 m_recordset[i]->addref();
         }
@@ -384,7 +370,6 @@ public:
     {
         recordsetImple* p = new recordsetImple();
         p->m_joinRows = m_joinRows;
-        p->m_uniqueReadMaxField = m_uniqueReadMaxField;
         p->m_fds.reset(m_fds->clone(), boost::bind(&fielddefs::release, _1));
 
         std::vector<size_t> offsets;
@@ -456,8 +441,6 @@ public:
         return p;
     }
 
-    inline short uniqueReadMaxField() const { return m_uniqueReadMaxField; }
-
     inline void clearRecords()
     {
         if (m_recordset.size())
@@ -468,9 +451,8 @@ public:
                     m_recordset[i]->release();
             }
         } 
-        
+
         m_recordset.clear();
-        m_uniqueReadMaxField = 0;
     }
 
     inline const fielddefs* fieldDefs() const { return m_fds.get(); }
