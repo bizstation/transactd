@@ -580,6 +580,17 @@ void fielddefs::addAllFields(const tabledef* def)
     blobResize(blobCount);
 }
 
+void fielddefs::append(const fielddefs* fds)
+{
+    size_t n = fds->size();
+    m_imple->fields.reserve(n + size());
+    for (size_t i = 0; i < n; ++i)
+    {
+        const fielddef* fd = &(*fds)[(int)i];
+        push_back(fd);
+    }
+}
+
 void fielddefs::addSelectedFields(const table* tb)
 {
     int n = tb->getCurProcFieldCount();
@@ -2243,6 +2254,19 @@ int field::nullComp(const field& r, char log) const
         if (lnull < rnull) return 1;
         return 0;
     }
+    return 2;
+}
+
+int field::nullCompMatch(const field& r, char log) const
+{
+    if ((log == eIsNull) || (log == eIsNotNull))
+        return nullComp(log);
+
+    bool lnull = isNull();
+    if (lnull) return -1;
+
+    bool rnull = r.isNull();
+    if (lnull) return 1;
     return 2;
 }
 

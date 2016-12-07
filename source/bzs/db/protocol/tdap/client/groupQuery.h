@@ -31,6 +31,8 @@ namespace tdap
 namespace client
 {
 
+#define JOIN_NO_MORERECORD 1
+
 class DLLLIB fieldNames
 {
 
@@ -109,7 +111,10 @@ class DLLLIB recordsetQuery : protected query
 
     struct recordsetQueryImple* m_imple;
     void init(const fielddefs* fdinfo);
+    void init(const fielddefs* fdinfo, const fielddefs* rfdinfo);
     bool match(const row_ptr row) const;
+    bool match(const row_ptr row, const row_ptr rrow) const;
+    int joinHint() const;
 
 public:
     recordsetQuery();

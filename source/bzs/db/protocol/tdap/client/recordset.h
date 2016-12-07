@@ -71,8 +71,11 @@ public:
                        const _TCHAR* name7 = NULL, const _TCHAR* name8 = NULL);
     recordset& orderBy(const sortFields& orders);
     recordset& reverse();
+    recordset& join(const recordset& rs, recordsetQuery& rq);
+    recordset& outerJoin(const recordset& rs, recordsetQuery& rq);
     void reserve(size_t size);
     void appendField(const _TCHAR* name, int type, short len);
+    void appendField(const fielddef& fd);
     recordset& operator+=(const recordset& r);
     void release();
     static recordset* create();

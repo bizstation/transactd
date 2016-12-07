@@ -1102,6 +1102,15 @@ BOOST_AUTO_TEST_CASE(table_utcc1)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(recordset)
+BOOST_AUTO_TEST_CASE(join)
+{
+    test_join();
+    
+}
+
+BOOST_AUTO_TEST_SUITE_END()
     
     
 // ------------------------------------------------------------------------

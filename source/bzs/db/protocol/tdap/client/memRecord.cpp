@@ -36,7 +36,7 @@ namespace client
 {
 
 autoMemory::autoMemory() : refarymem(), ptr(0), endFieldIndex(NULL), size(0),
-                            owner(false)
+                            usedIndex(0), owner(false)
 {
 }
 
@@ -45,7 +45,7 @@ void autoMemory::setParams(unsigned char* p, size_t s, short* endIndex, bool own
     if (owner)
     {
         delete[] ptr;
-        delete endFieldIndex;
+        delete[] endFieldIndex;
     }
 
     ptr = p;
@@ -59,11 +59,24 @@ void autoMemory::setParams(unsigned char* p, size_t s, short* endIndex, bool own
             memcpy(ptr, p, size);
         else
             memset(ptr, 0, size + 1);
-        endFieldIndex = new short;
+        endFieldIndex = new short[JOINLIMIT_PER_RECORD];
+        memset(endFieldIndex, 0, sizeof(short) * JOINLIMIT_PER_RECORD);
         if (endIndex != NULL)
-            *endFieldIndex = *endIndex;
+            endFieldIndex[usedIndex] = *endIndex;
     }
-        
+}
+
+short* autoMemory::appendEndFieldIndex(short value)
+{
+    assert(owner);
+    endFieldIndex[++usedIndex] = value;
+    return endFieldIndex + (usedIndex);
+}
+
+void autoMemory::assignEndFieldIndex(short* p)
+{
+    assert(owner);
+    memcpy(endFieldIndex, p, sizeof(short) * JOINLIMIT_PER_RECORD);
 }
 
 autoMemory::~autoMemory()
@@ -71,7 +84,7 @@ autoMemory::~autoMemory()
     if (owner)
     {
         delete[] ptr;
-        delete endFieldIndex;
+        delete[] endFieldIndex;
     }
 }
 
