@@ -75,8 +75,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,6,1,245
- PRODUCTVERSION 3,6,1,245
+ FILEVERSION 3,7,0,248
+ PRODUCTVERSION 3,7,0,248
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -93,9 +93,9 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "BizStation Corp."
             VALUE "FileDescription", "Transactd ATL client"
-            VALUE "FileVersion", "3.6.1.245"
+            VALUE "FileVersion", "3.7.0.248"
             VALUE "LegalCopyright", "Copyright(C) 2016 BizStation Corp"
-            VALUE "ProductVersion", "3.6.1.245"
+            VALUE "ProductVersion", "3.7.0.248"
             VALUE "ProductName", "Transactd Client (GPL V2)"
             VALUE "InternalName", "tdclatl.dll"
             VALUE "OriginalFilename", "tdclatl.dll"
