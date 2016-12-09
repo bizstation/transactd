@@ -30199,97 +30199,11 @@ ZEND_NAMED_FUNCTION(_wrap_Recordset_erase) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  /*{
-    bzs::db::protocol::tdap::client::recordset::iterator * resultobj = new bzs::db::protocol::tdap::client::recordset::iterator((const bzs::db::protocol::tdap::client::recordset::iterator &) result);
-    SWIG_SetPointerZval(return_value, (void *)resultobj, SWIGTYPE_p_std__vectorT_bzs__client__fieldsBase_p_t__iterator, 1);
-  }*/
   return;
 fail:
   SWIG_FAIL(TSRMLS_C);
 }
 
-/*
-ZEND_NAMED_FUNCTION(_wrap_Recordset_erase__SWIG_1) {
-  bzs::db::protocol::tdap::client::recordset *arg1 = (bzs::db::protocol::tdap::client::recordset *) 0 ;
-  bzs::db::protocol::tdap::client::recordset::iterator *arg2 = 0 ;
-  zval_args_type args[2];
-  //SwigValueWrapper< std::vector< bzs::db::protocol::tdap::client::fieldsBase * >::iterator > result;
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__client__recordset, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of Recordset_erase. Expected SWIGTYPE_p_bzs__client__recordset");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[1], (void **) &arg2, SWIGTYPE_p_std__vectorT_bzs__client__fieldsBase_p_t__iterator, 0) < 0 || arg2 == NULL) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of Recordset_erase. Expected SWIGTYPE_p_std__vectorT_bzs__client__fieldsBase_p_t__iterator");
-    }
-  }
-  {
-    try {
-      result = (arg1)->erase((bzs::db::protocol::tdap::client::recordset::iterator const &)*arg2);
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  {
-    bzs::db::protocol::tdap::client::recordset::iterator * resultobj = new bzs::db::protocol::tdap::client::recordset::iterator((const bzs::db::protocol::tdap::client::recordset::iterator &) result);
-    SWIG_SetPointerZval(return_value, (void *)resultobj, SWIGTYPE_p_std__vectorT_bzs__client__fieldsBase_p_t__iterator, 1);
-  }
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_Recordset_erase) {
-  int argc;
-  zval_args_type argv[2];
-  
-  argc = ZEND_NUM_ARGS();
-  zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__client__recordset, 0) >= 0);
-    }
-    if (_v) {
-      {
-        void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_std__vectorT_bzs__client__fieldsBase_p_t__iterator, 0) >= 0);
-      }
-      if (_v) {
-        _wrap_Recordset_erase__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-      }
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__client__recordset, 0) >= 0);
-    }
-    if (_v) {
-      _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
-      if (_v) {
-        _wrap_Recordset_erase__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-      }
-    }
-  }
-  
-  SWIG_ErrorCode() = E_ERROR;
-  SWIG_ErrorMsg() = "No matching function for overloaded 'Recordset_erase'";
-  SWIG_FAIL(TSRMLS_C);
-}*/
 
 
 ZEND_NAMED_FUNCTION(_wrap_Recordset_removeField) {
@@ -30325,6 +30239,100 @@ ZEND_NAMED_FUNCTION(_wrap_Recordset_removeField) {
   return;
 fail:
   SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_Recordset_join) {
+    recordset *arg1 = 0;
+    recordset *arg2 = 0;
+    recordsetQuery *arg3 = 0;
+    zval_args_type args[3];
+
+    SWIG_ResetError(TSRMLS_C);
+    if (ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&arg1, SWIGTYPE_p_bzs__client__recordset, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of Recordset_join. Expected SWIGTYPE_p_bzs__client__recordset");
+        }
+    }
+    if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[1], (void **)&arg2, SWIGTYPE_p_bzs__client__recordset, 0) < 0 || arg2 == NULL) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of Recordset_join. Expected SWIGTYPE_p_bzs__client__recordset");
+        }
+    }
+
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[2], (void **)&arg3, SWIGTYPE_p_bzs__client__recordsetQuery, 0) < 0 || arg3 == NULL) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 3 of Recordset_join. Expected SWIGTYPE_p_bzs__client__recordsetQuery");
+        }
+    }
+
+    {
+        try {
+            arg1->join(*arg2, *arg3);
+        }
+        catch (bzs::rtl::exception& e) {
+            SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            SWIG_exception(SWIG_RuntimeError, e.what());
+        }
+    }
+    return;
+fail:
+    SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_Recordset_outerJoin) {
+    recordset *arg1 = 0;
+    recordset *arg2 = 0;
+    recordsetQuery *arg3 = 0;
+    zval_args_type args[3];
+
+    SWIG_ResetError(TSRMLS_C);
+    if (ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&arg1, SWIGTYPE_p_bzs__client__recordset, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of Recordset_join. Expected SWIGTYPE_p_bzs__client__recordset");
+        }
+    }
+    if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[1], (void **)&arg2, SWIGTYPE_p_bzs__client__recordset, 0) < 0 || arg2 == NULL) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of Recordset_join. Expected SWIGTYPE_p_bzs__client__recordset");
+        }
+    }
+
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[2], (void **)&arg3, SWIGTYPE_p_bzs__client__recordsetQuery, 0) < 0 || arg3 == NULL) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 3 of Recordset_join. Expected SWIGTYPE_p_bzs__client__recordsetQuery");
+        }
+    }
+
+    {
+        try {
+            arg1->outerJoin(*arg2, *arg3);
+        }
+        catch (bzs::rtl::exception& e) {
+            SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            SWIG_exception(SWIG_RuntimeError, e.what());
+        }
+    }
+    return;
+fail:
+    SWIG_FAIL(TSRMLS_C);
 }
 
 
@@ -30523,12 +30531,14 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_Recordset_appendField) {
   bzs::db::protocol::tdap::client::recordset *arg1 = (bzs::db::protocol::tdap::client::recordset *) 0 ;
   _TCHAR *arg2 = (_TCHAR *) 0 ;
+  bzs::db::protocol::tdap::fielddef* fds = 0;
   int arg3 ;
   short arg4 ;
   zval_args_type args[4];
+  int argc = ZEND_NUM_ARGS();
   
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 4 || zend_get_parameters_array_ex(4, ZVAL_ARGS_ARRAY) != SUCCESS) {
+  if(argc < 2 || argc > 4 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
@@ -30538,27 +30548,40 @@ ZEND_NAMED_FUNCTION(_wrap_Recordset_appendField) {
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+  if (Z_TYPE_AGRS(1) == IS_STRING)
   {
     if (Z_TYPE_AGRS(1) != IS_NULL) {
       CONV_to_string_ex(args[1]);
       arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
     }
+
+    /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,7,CONVERT_INT_IN@*/
+    CONV_to_long_ex(args[2]);
+    arg3 = (int)Z_LVAL_PP(args[2]);
+    /*@SWIG@*/;
+
+
+    /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,7,CONVERT_INT_IN@*/
+    CONV_to_long_ex(args[3]);
+    arg4 = (short)Z_LVAL_PP(args[3]);
+    /*@SWIG@*/;
+
+  }else
+  {
+      if (SWIG_ConvertPtr(ZVAL_ARGS[1], (void **)&fds, SWIGTYPE_p_bzs__fielddef, 0) < 0 || fds == NULL) {
+          SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of Recordset_appendField. Expected SWIGTYPE_p_bzs__fielddef");
+      }
   }
   
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,7,CONVERT_INT_IN@*/
-  CONV_to_long_ex(args[2]);
-  arg3 = (int) Z_LVAL_PP(args[2]);
-  /*@SWIG@*/;
   
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,7,CONVERT_INT_IN@*/
-  CONV_to_long_ex(args[3]);
-  arg4 = (short) Z_LVAL_PP(args[3]);
-  /*@SWIG@*/;
   
   {
     try {
-      (arg1)->appendField((_TCHAR const *)arg2,arg3,arg4);
+      if (fds)
+          (arg1)->appendField(*fds);
+      else
+          (arg1)->appendField((_TCHAR const *)arg2,arg3,arg4);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -35944,6 +35967,16 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_recordset_removefield, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_recordset_join, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_recordset_outerjoin, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_recordset_matchby, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
@@ -36798,6 +36831,8 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(recordset_top,_wrap_Recordset_top,swig_arginfo_recordset_top)
  SWIG_ZEND_NAMED_FE(recordset_erase,_wrap_Recordset_erase,swig_arginfo_recordset_erase)
  SWIG_ZEND_NAMED_FE(recordset_removefield,_wrap_Recordset_removeField,swig_arginfo_recordset_removefield)
+ SWIG_ZEND_NAMED_FE(recordset_join, _wrap_Recordset_join, swig_arginfo_recordset_join)
+ SWIG_ZEND_NAMED_FE(recordset_outerjoin, _wrap_Recordset_outerJoin, swig_arginfo_recordset_outerjoin)
  SWIG_ZEND_NAMED_FE(recordset_matchby,_wrap_Recordset_matchBy,swig_arginfo_recordset_matchby)
  SWIG_ZEND_NAMED_FE(recordset_groupby,_wrap_Recordset_groupBy,swig_arginfo_recordset_groupby)
  SWIG_ZEND_NAMED_FE(recordset_orderby,_wrap_Recordset_orderBy,swig_arginfo_recordset_orderby)

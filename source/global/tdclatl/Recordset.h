@@ -1,6 +1,6 @@
 #pragma once
 /*=================================================================
-   Copyright (C) 2014 BizStation Corp All rights reserved.
+   Copyright (C) 2014-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -87,5 +87,9 @@ public:
     STDMETHOD(Clear)();
     STDMETHOD(ClearRecords)();
     STDMETHOD(UnionRecordset)(IRecordset* rs, IRecordset** retVal);
-
+    STDMETHOD(Join)(IRecordset* rs, IRecordsetQuery* gq, IRecordset** retVal);
+    STDMETHOD(OuterJoin)(IRecordset* rs, IRecordsetQuery* gq, IRecordset** retVal);
+ 
 };
+
+  

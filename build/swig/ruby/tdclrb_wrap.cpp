@@ -22949,6 +22949,92 @@ fail:
 
 
 SWIGINTERN VALUE
+_wrap_Recordset_join(int argc, VALUE *argv, VALUE self) {
+  tdap::client::recordset *arg1 = 0 ;
+  tdap::client::recordset *arg2 = 0 ;
+  tdap::client::recordsetQuery *arg3 = 0 ;
+  void *argp2 = 0 ;
+  void *argp3 = 0 ;
+  int res2 = 0 ;
+  int res3 = 0 ;
+  
+  if (!check_param_count(argc, 2, 2)) return Qnil;
+  arg1 = selfPtr(self, arg1);
+
+  res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_bzs__recordset,  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "tdap::client::recordset &","join", 2, argv[0] )); 
+  }
+  if (!argp2) {
+    SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "tdap::client::recordset &","join", 1, argv[0])); 
+  }
+
+  res3 = SWIG_ConvertPtr(argv[1], &argp3, SWIGTYPE_p_bzs__recordsetQuery,  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "tdap::client::recordsetQuery &","join", 3, argv[1] )); 
+  }
+  if (!argp3) {
+    SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "tdap::client::recordsetQuery &","join", 2, argv[1])); 
+  }
+  
+  arg2 = reinterpret_cast< tdap::client::recordset * >(argp2);
+  arg3 = reinterpret_cast< tdap::client::recordsetQuery * >(argp3);
+  {
+    try {
+      arg1->join(*arg2, *arg3);
+    } 
+    CATCH_BZS_AND_STD()
+  }
+  return self;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_Recordset_outerJoin(int argc, VALUE *argv, VALUE self) {
+  tdap::client::recordset *arg1 = 0 ;
+  tdap::client::recordset *arg2 = 0 ;
+  tdap::client::recordsetQuery *arg3 = 0 ;
+  void *argp2 = 0 ;
+  void *argp3 = 0 ;
+  int res2 = 0 ;
+  int res3 = 0 ;
+  
+  if (!check_param_count(argc, 2, 2)) return Qnil;
+  arg1 = selfPtr(self, arg1);
+
+  res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_bzs__recordset,  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "tdap::client::recordset &","outerJoin", 2, argv[0] )); 
+  }
+  if (!argp2) {
+    SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "tdap::client::recordset &","outerJoin", 1, argv[0])); 
+  }
+
+  res3 = SWIG_ConvertPtr(argv[1], &argp3, SWIGTYPE_p_bzs__recordsetQuery,  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "tdap::client::recordsetQuery &","outerJoin", 3, argv[1] )); 
+  }
+  if (!argp3) {
+    SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "tdap::client::recordsetQuery &","outerJoin", 2, argv[1])); 
+  }
+  
+  arg2 = reinterpret_cast< tdap::client::recordset * >(argp2);
+  arg3 = reinterpret_cast< tdap::client::recordsetQuery * >(argp3);
+  {
+    try {
+      arg1->outerJoin(*arg2, *arg3);
+    } 
+    CATCH_BZS_AND_STD()
+  }
+  return self;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_Recordset_matchBy(int argc, VALUE *argv, VALUE self) {
   tdap::client::recordset *arg1 = (tdap::client::recordset *) 0 ;
   tdap::client::recordsetQuery *arg2 = 0 ;
@@ -23075,7 +23161,9 @@ fail:
 SWIGINTERN VALUE
 _wrap_Recordset_appendField(int argc, VALUE *argv, VALUE self) {
   tdap::client::recordset *arg1 = (tdap::client::recordset *) 0 ;
+  tdap::fielddef *fd = 0 ;
   _TCHAR *arg2 = (_TCHAR *) 0 ;
+  void *argp2 ;
   int arg3 ;
   short arg4 ;
   int res2 ;
@@ -23086,27 +23174,44 @@ _wrap_Recordset_appendField(int argc, VALUE *argv, VALUE self) {
   short val4 ;
   int ecode4 = 0 ;
   
-  if (!check_param_count(argc, 3, 3)) return Qnil;
-
+  if (!check_param_count(argc, 1, 3)) return Qnil;
   arg1 = selfPtr(self, arg1);
-  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","appendField", 2, argv[0] ));
+
+  if (TYPE(argv[0]) == T_STRING)
+  {
+    res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","appendField", 2, argv[0] ));
+    }
+    arg2 = reinterpret_cast< _TCHAR * >(buf2);
+    ecode3 = SWIG_AsVal_int(argv[1], &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), Ruby_Format_TypeError( "", "int","appendField", 3, argv[1] ));
+    } 
+    arg3 = static_cast< int >(val3);
+    ecode4 = SWIG_AsVal_short(argv[2], &val4);
+    if (!SWIG_IsOK(ecode4)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode4), Ruby_Format_TypeError( "", "short","appendField", 4, argv[2] ));
+    } 
+    arg4 = static_cast< short >(val4);
   }
-  arg2 = reinterpret_cast< _TCHAR * >(buf2);
-  ecode3 = SWIG_AsVal_int(argv[1], &val3);
-  if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), Ruby_Format_TypeError( "", "int","appendField", 3, argv[1] ));
-  } 
-  arg3 = static_cast< int >(val3);
-  ecode4 = SWIG_AsVal_short(argv[2], &val4);
-  if (!SWIG_IsOK(ecode4)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode4), Ruby_Format_TypeError( "", "short","appendField", 4, argv[2] ));
-  } 
-  arg4 = static_cast< short >(val4);
+  else
+  {
+    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_bzs__fielddef,  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "tdap::fielddef*","appendField", 2, argv[0] )); 
+    }
+    if (!argp2) {
+      SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "tdap::fielddef*","appendField", 2, argv[0])); 
+    }
+    fd = reinterpret_cast< tdap::fielddef * >(argp2);
+  }
   {
     try {
-      (arg1)->appendField((_TCHAR const *)arg2,arg3,arg4);
+      if (fd)
+        (arg1)->appendField(*fd);
+      else
+        (arg1)->appendField((_TCHAR const *)arg2,arg3,arg4);
       clearFieldsCache(self);
     } 
     CATCH_BZS_AND_STD()
@@ -27765,6 +27870,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassRecordset.klass, "top", VALUEFUNC(_wrap_Recordset_top), -1);
   rb_define_method(SwigClassRecordset.klass, "erase", VALUEFUNC(_wrap_Recordset_erase), -1);
   rb_define_method(SwigClassRecordset.klass, "removeField", VALUEFUNC(_wrap_Recordset_removeField), -1);
+  rb_define_method(SwigClassRecordset.klass, "join", VALUEFUNC(_wrap_Recordset_join), -1);
+  rb_define_method(SwigClassRecordset.klass, "outerJoin", VALUEFUNC(_wrap_Recordset_outerJoin), -1);
   rb_define_method(SwigClassRecordset.klass, "matchBy", VALUEFUNC(_wrap_Recordset_matchBy), -1);
   rb_define_method(SwigClassRecordset.klass, "groupBy", VALUEFUNC(_wrap_Recordset_groupBy), -1);
   rb_define_method(SwigClassRecordset.klass, "orderBy", VALUEFUNC(_wrap_Recordset_orderBy), -1);
@@ -27782,6 +27889,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_alias(SwigClassRecordset.klass, "clear_records", "clearRecords");
   rb_define_alias(SwigClassRecordset.klass, "field_defs", "fieldDefs");
   rb_define_alias(SwigClassRecordset.klass, "remove_field", "removeField");
+  rb_define_alias(SwigClassRecordset.klass, "outer_join", "outerJoin");
   rb_define_alias(SwigClassRecordset.klass, "match_by", "matchBy");
   rb_define_alias(SwigClassRecordset.klass, "group_by", "groupBy");
   rb_define_alias(SwigClassRecordset.klass, "order_by", "orderBy");

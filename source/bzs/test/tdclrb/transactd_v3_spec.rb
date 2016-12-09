@@ -2114,4 +2114,44 @@ describe Transactd, 'V3Features' do
     tb.close
     db.close
   end
+
+  it 'recordset join' do
+    db = Transactd::Database.new()
+    db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+    at = Transactd::ActiveTable.new(db, "user")
+    ate = Transactd::ActiveTable.new(db, "extention")
+
+    q = Transactd::Query.new()
+    q.where("id", ">=", 1).and_("id", "<=", 10)
+    rs = at.index(0).keyValue(1).read(q)
+    expect(rs.size).to eq 10
+
+    q.reset().where("id", ">=", 1).and_("id", "<=", 5)
+    rse = ate.index(0).keyValue(1).read(q)
+    expect(rse.size).to eq 5
+    
+    rs1 = rs.clone();
+    rq = Transactd::RecordsetQuery.new()
+    rq.when('id', '=', 'id')
+    
+    #Join
+    rs1.join(rse, rq)
+    expect(rs1.size).to eq 5
+
+    #outerJoin
+    rs.outerJoin(rse, rq)
+    expect(rs.size).to eq 10
+    
+    #appendField
+    n = rs.fieldDefs().size
+    fd = Transactd::Fielddef.new()
+    fd.name = 'abc'
+    fd.len = 2
+    fd.type = Transactd::Ft_integer
+    rs.appendField(fd)
+    expect(rs.fieldDefs().size).to eq n+1
+    expect(rs.fieldDefs()[n].name).to eq 'abc'
+    db.close
+  end
+
 end
