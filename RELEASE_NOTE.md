@@ -1,5 +1,19 @@
 Release note
 ================================================================================
+Version 3.7.0 2016/12/13
+================================================================================
+New Features
+--------------------------------------------------------------------------------
+* Support JOIN between two recordsets. It allows you to JOIN any column 
+  regardless of table index. See `recordset::join` on SDK documents for 
+  more details.
+
+* [C++][PHP][Ruby] Modify `recordset::appendField` to add with `fielddef`.
+
+* [C++] Add `fielddefs::append(const fielddefs* fds)`.
+
+
+================================================================================
 Version 3.6.1 2016/11/14
 ================================================================================
 New Features
@@ -7,6 +21,7 @@ New Features
 * Support comparison between fields in `recordset::matchBy`.
 
 
+================================================================================
 Version 3.6.0 2016/11/08
 ================================================================================
 New Features
