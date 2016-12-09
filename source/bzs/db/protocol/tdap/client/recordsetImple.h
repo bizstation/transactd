@@ -764,14 +764,15 @@ public:
         {
             size_t j = 0;
             size_t found = 0;
+            q.setJoinRow(m_recordset[i]);
             while (j < r.size())
             {
-                if (q.match(m_recordset[i], r.m_recordset[j]))
+                if (q.matchJoin(r.m_recordset[j]))
                 {
                     indexes.push_back((int)j);
                     ++found;
                 }
-                if(q.joinHint() == JOIN_NO_MORERECORD)
+                if(q.matchStatus() == JOIN_NO_MORERECORD)
                     break;
                 ++j;
             }
@@ -793,6 +794,7 @@ public:
                 i += found;
             }
         }
+        assert(m_recordset.size() == indexes.size());
         assignJoinFields(r, indexes);
     }
 

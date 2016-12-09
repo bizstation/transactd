@@ -110,11 +110,14 @@ class DLLLIB recordsetQuery : protected query
     friend class recordsetImple;
 
     struct recordsetQueryImple* m_imple;
+
+    void createTempRecord();
     void init(const fielddefs* fdinfo);
     void init(const fielddefs* fdinfo, const fielddefs* rfdinfo);
     bool match(const row_ptr row) const;
-    bool match(const row_ptr row, const row_ptr rrow) const;
-    int joinHint() const;
+    bool matchJoin(const row_ptr rrow) const;
+    void setJoinRow(const row_ptr row);
+    int matchStatus() const;
 
 public:
     recordsetQuery();
