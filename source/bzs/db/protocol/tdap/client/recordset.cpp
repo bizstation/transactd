@@ -180,6 +180,18 @@ recordset& recordset::reverse()
     return *this;
 }
 
+recordset& recordset::join(const recordset& rs, recordsetQuery& rq)
+{
+    m_imple->nestedLoopJoin(*rs.m_imple, rq, true);
+    return *this;
+}
+
+recordset& recordset::outerJoin(const recordset& rs, recordsetQuery& rq)
+{
+    m_imple->nestedLoopJoin(*rs.m_imple, rq, false);
+    return *this;
+}
+
 void recordset::reserve(size_t size)
 {
     m_imple->reserve(size);
@@ -188,6 +200,11 @@ void recordset::reserve(size_t size)
 void recordset::appendField(const _TCHAR* name, int type, short len)
 {
     m_imple->appendField(name, type, len);
+}
+
+void recordset::appendField(const fielddef& fd)
+{
+	m_imple->appendField(fd);	
 }
 
 recordset& recordset::operator+=(const recordset& r)

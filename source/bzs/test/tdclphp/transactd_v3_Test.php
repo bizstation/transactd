@@ -24,6 +24,7 @@ use BizStation\Transactd\Transactd;
 use BizStation\Transactd\PooledDbManager;
 use BizStation\Transactd\ConnectParams;
 use BizStation\Transactd\Tabledef;
+use BizStation\Transactd\Fielddef;
 use BizStation\Transactd\Database;
 use BizStation\Transactd\BtrVersions;
 use BizStation\Transactd\Nstable;
@@ -1428,5 +1429,39 @@ class TransactdTest extends PHPUnit_Framework_TestCase
         $tb->setKeyNum(2);
         $this->assertEquals($tb->deleteByObject($usr, false/*inKey*/), false);
         $this->assertEquals($tb->deleteByObject($usr), true);  //default value true
+    }
+    
+    public function testRecordsetJoin()
+    {
+        $db = new Database();
+        $db->open(URI, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL);
+        $this->assertEquals($db->stat(), 0);
+        $at = new ActiveTable($db, "user", Transactd::TD_OPEN_READONLY);
+        $ate = new ActiveTable($db, "extention", Transactd::TD_OPEN_READONLY);
+        $q = new Query;
+        $q->where('id','>=', 1)->and_('id','<=',10);
+        $rs = $at->index(0)->keyValue(1)->read($q);
+        $this->assertEquals($rs->size(), 10);
+        $q->reset()->where('id','>=', 1)->and_('id','<=',5);
+        $rse = $ate->index(0)->keyValue(1)->read($q);
+        $this->assertEquals($rse->size(), 5);
+        $rs1 = clone($rs);
+        $rq = new RecordsetQuery;
+        $rq->when('id', '=', 'id');
+        $rs1->join($rse, $rq);
+        $this->assertEquals($rs1->size(), 5);
+        $rs->outerJoin($rse, $rq);
+        $this->assertEquals($rs->size(), 10);
+        
+        // Recordset::appendField
+        $n = $rs->fieldDefs()->size();
+        $fd = new Fielddef;
+        $fd->type = Transactd::ft_integer;
+        $fd->len = 4;
+        $fd->name = 'abc';
+        $rs->appendField($fd);
+        $this->assertEquals($n + 1, $rs->fieldDefs()->size());
+        $rs->appendField($fd->name, $fd->type, $fd->len);
+        $this->assertEquals($n + 2, $rs->fieldDefs()->size());
     }
 }

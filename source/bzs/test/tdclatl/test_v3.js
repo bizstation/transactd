@@ -331,6 +331,7 @@ var FMT_RIGHT = 2;
 var MAGNIFICATION = 100;
 var resultCode = 0;
 var q;
+var gq;
 
 WScript.quit(main());
 /*--------------------------------------------------------------------------------*/
@@ -906,6 +907,25 @@ function tesAlias(db)
 	tb.close();
 }
 
+function testRecordsetJoin(atu, ate)
+{
+	initQuery();
+	q.where("id" , ">=", 1).and("id", "<=", 10).select("id", "name");
+	rs = atu.index(0).keyValue(1).read(q);
+	checkEqual(rs.size, 10, "RecordsetJoin 1");
+	q.reset().where("id" , ">=", 1).and("id", "<=", 5);
+	rse = ate.index(0).keyValue(1).read(q);
+	checkEqual(rse.size, 5, "RecordsetJoin 2");
+	var rq = createRecordsetQuery();
+	var rs1 = rs.clone();
+	rq.when("id", "=", "id");
+	rs1.join(rse, rq);
+	checkEqual(rs1.size, 5, "RecordsetJoin 3");
+	rs.outerjoin(rse, rq);
+	checkEqual(rs.size, 10, "RecordsetJoin 4");
+}
+
+
 /*--------------------------------------------------------------------------------*/
 function test(atu, ate, db)
 {
@@ -1218,6 +1238,8 @@ function test(atu, ate, db)
 	
 	//Alias
 	tesAlias(db);
+	
+	testRecordsetJoin(atu, ate);
 	//WScript.Echo(" -- End Test -- ");
 }
 /*--------------------------------------------------------------------------------*/

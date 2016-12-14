@@ -2018,7 +2018,7 @@ abstract class Nstable
     /**
      *
      * @param \BizStation\Transactd\Bookmark $bm
-     * @return int 0〜10000
+     * @return int 0 to 10000
      */
     public function getPercentage($bm=null)
     {
@@ -7405,6 +7405,26 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate
         Recordset_removeField($this->cPtr, $index);
     }
     /**
+     * @param \BizStation\Transactd\Recordset $rs
+     * @param \BizStation\Transactd\RecordsetQuery $rq
+     * @return \BizStation\Transactd\Recordset
+     */
+    public function join($rs, $rq)
+    {
+        Recordset_join($this->cPtr, $rs, $rq);
+        return $this;
+    }
+    /**
+     * @param \BizStation\Transactd\Recordset $rs
+     * @param \BizStation\Transactd\RecordsetQuery $rq
+     * @return \BizStation\Transactd\Recordset
+     */
+    public function outerJoin($rs, $rq)
+    {
+        Recordset_outerJoin($this->cPtr, $rs, $rq);
+        return $this;
+    }
+    /**
      * 
      * @param \BizStation\Transactd\RecordsetQuery $rq
      * @return \BizStation\Transactd\Recordset
@@ -7455,13 +7475,20 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate
     }
     /**
      * 
-     * @param string $name
+     * @param string|\BizStation\Transactd\Fielddef $nameOrFielddef
      * @param int $type
      * @param int $len
      */
-    public function appendField($name, $type, $len)
+    public function appendField($nameOrFielddef, $type=null, $len=null)
     {
-        Recordset_appendField($this->cPtr, $name, $type, $len);
+        if (is_string($nameOrFielddef)) {
+            if (is_null($type) || is_null($len)) {
+                throw new \InvalidArgumentException();
+            }
+            Recordset_appendField($this->cPtr, $nameOrFielddef, $type, $len);
+        } else {
+            Recordset_appendField($this->cPtr, $nameOrFielddef);
+        }
     }
     /**
      * 

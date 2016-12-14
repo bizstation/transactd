@@ -629,6 +629,8 @@ ZEND_NAMED_FUNCTION(_wrap_Recordset_clear);
 ZEND_NAMED_FUNCTION(_wrap_Recordset_top);
 ZEND_NAMED_FUNCTION(_wrap_Recordset_erase);
 ZEND_NAMED_FUNCTION(_wrap_Recordset_removeField);
+ZEND_NAMED_FUNCTION(_wrap_Recordset_join);
+ZEND_NAMED_FUNCTION(_wrap_Recordset_outerJoin);
 ZEND_NAMED_FUNCTION(_wrap_Recordset_matchBy);
 ZEND_NAMED_FUNCTION(_wrap_Recordset_groupBy);
 ZEND_NAMED_FUNCTION(_wrap_Recordset_orderBy);

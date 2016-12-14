@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2014 BizStation Corp All rights reserved.
+   Copyright (C) 2014-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -371,7 +371,7 @@ STDMETHODIMP CARecordset::UnionRecordset(IRecordset* rs, IRecordset** retVal)
     {
         CARecordset* p = dynamic_cast<CARecordset*>(rs);
         if (!p)
-            return Error(_T("Invalid ActiveTable::UnionRecordset param 1"), IID_IRecordset);
+            return Error(_T("Invalid Recordset::UnionRecordset param 1"), IID_IRecordset);
         *m_rs += *(p->m_rs);
         setResult(retVal);
         return S_OK;        
@@ -382,3 +382,45 @@ STDMETHODIMP CARecordset::UnionRecordset(IRecordset* rs, IRecordset** retVal)
     }
 }
 
+STDMETHODIMP CARecordset::Join(IRecordset* irs, IRecordsetQuery* igq, IRecordset** retVal)
+{
+    try
+    {
+        CARecordset* rs = dynamic_cast<CARecordset*>(irs);
+        if (!rs)
+            return Error(_T("Invalid Recordset::Join param 1"), IID_IRecordset);
+        
+        CRecordsetQuery* rq = dynamic_cast<CRecordsetQuery*>(igq);
+        if (!rq)
+            return Error(_T("Invalid Recordset::Join param 2"), IID_IRecordset);
+        m_rs->join(*rs->m_rs, rq->m_qb);
+        setResult(retVal);
+        return S_OK;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
+}
+
+
+STDMETHODIMP CARecordset::OuterJoin(IRecordset* irs, IRecordsetQuery* igq, IRecordset** retVal)
+{
+    try
+    {
+        CARecordset* rs = dynamic_cast<CARecordset*>(irs);
+        if (!rs)
+            return Error(_T("Invalid Recordset::Join param 1"), IID_IRecordset);
+        
+        CRecordsetQuery* rq = dynamic_cast<CRecordsetQuery*>(igq);
+        if (!rq)
+            return Error(_T("Invalid Recordset::Join param 2"), IID_IRecordset);
+        m_rs->outerJoin(*rs->m_rs, rq->m_qb);
+        setResult(retVal);
+        return S_OK;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
+}

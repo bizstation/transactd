@@ -446,6 +446,7 @@ public:
         {
             m_matched = true;
             // check  is this logic range of max ?
+            // (v == 0) it was max value of this node. 
             // if max then set judge node to next logic
             if ((m_fd->opr != 0) && m_judge && (v == 0) && m_next->m_judgeType)
                 m_next->m_judge = true;

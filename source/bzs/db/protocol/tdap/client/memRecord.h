@@ -44,9 +44,12 @@ public:
     void setParams(unsigned char* p, size_t s, short* endIndex, bool own);
 
     autoMemory& operator=(const bzs::db::protocol::tdap::client::autoMemory& p);
+    short* appendEndFieldIndex(short value);
+    void assignEndFieldIndex(short* p);
     unsigned char* ptr;
     short* endFieldIndex;
-    unsigned int size ;
+    unsigned int size;
+    unsigned char usedIndex;
     bool owner ;
     static autoMemory* create(int n);
     static autoMemory* create();
@@ -132,6 +135,12 @@ class DLLLIB memoryRecord : public fieldsBase
             --m_memblockSize; 
 #endif
         }
+    }
+
+    inline void setInvalidMemblockLast() 
+    { 
+        int num = memBlockSize() -1;
+        m_InvalidFlags |= ((2L << num) | 1L); 
     }
 
     void releaseMemory();

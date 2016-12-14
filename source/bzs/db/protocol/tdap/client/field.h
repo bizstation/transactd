@@ -110,6 +110,7 @@ public:
     size_t size() const;
     void addAllFields(const tabledef* def);
     void addSelectedFields(const class table* tb);
+    void append(const fielddefs* fds);
     void release();
     static fielddefs* create();
 };
@@ -152,6 +153,7 @@ class DLLLIB field
     void* nullPtr() const;
     int nullComp(const field& r, char log) const;
     int nullComp(char log) const;
+    int nullCompMatch(const field& r, char log) const;
     bool isCompPartAndMakeValue();
     void offsetBlobPtr(size_t offset);
 

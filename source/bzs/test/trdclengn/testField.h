@@ -3940,6 +3940,326 @@ void test_UTCC_wt_delete()
     db->abortTrn();
 }
 
+
+void test_join()
+{
+
+    database_ptr db = createDatabaseObject();
+    openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+
+    activeTable at(db, _T("users"));
+    recordset rs;
+    query q;
+    q.select(_T("id"), _T("group"));
+    at.index(0).keyValue(0).read(rs, q);
+    BOOST_CHECK_MESSAGE(rs.size() == 13, "rs.size() = " << rs.size());
+    recordset& rs2 = *rs.clone();
+
+    activeTable atg(db, _T("groups"));
+    recordset rsg;
+    atg.index(0).keyValue(0).read(rsg, q.reset());
+    recordset& rsg2 = *rsg.clone();
+
+    recordsetQuery rq;
+    rq.when(_T("pri_id"), _T("="), _T("group"));
+    rsg2.join(rs, rq);
+    /*
+    rsg.dump();
+    +--------+------+----------------+------+-------+
+    | pri_id |   id | name           |   id | group |
+    +--------+------+----------------+------+-------+
+    |      1 |    1 | Administrators |    1 |     1 |
+    |      1 |    1 | Administrators |   10 |     1 |
+    |      2 |    2 | Users          |    2 |     2 |
+    |      2 |    2 | Users          |    4 |     2 |
+    |      2 |    2 | Users          |    7 |     2 |
+    |      3 |    3 | Guests         |    8 |     3 |
+    |      3 |    3 | Guests         |   11 |     3 |
+    |      4 | NULL | Unknowns       |    6 |     4 |
+    |      4 | NULL | Unknowns       |    9 |     4 |
+    +--------+------+----------------+------+-------+
+    select 
+        groups.pri_id, groups.id, groups.name, users.id,users.group
+    from 
+        groups 
+        inner join users on groups.pri_id = users.group;
+    */
+    BOOST_CHECK(rsg2.size() == 9);
+    for (size_t i = 0;i < rsg2.size(); ++i)
+        BOOST_CHECK(rsg2[i][(short)0].i() == rsg2[i][4].i());
+    
+
+    rq.reset().when(_T("group"), _T("="), _T("pri_id"));
+    rs2.outerJoin(rsg, rq);
+    /*
+    rs2.dump();
+    +------+-------+--------+------+----------------+
+    |   id | group | pri_id |   id | name           |
+    +------+-------+--------+------+----------------+
+    |    1 |     1 |      1 |    1 | Administrators |
+    |    2 |     2 |      2 |    2 | Users          |
+    |    3 |  NULL |   NULL | NULL | NULL           |
+    |    4 |     2 |      2 |    2 | Users          |
+    |    5 |  NULL |   NULL | NULL | NULL           |
+    |    6 |     4 |      4 | NULL | Unknowns       |
+    |    7 |     2 |      2 |    2 | Users          |
+    |    8 |     3 |      3 |    3 | Guests         |
+    |    9 |     4 |      4 | NULL | Unknowns       |
+    |   10 |     1 |      1 |    1 | Administrators |
+    |   11 |     3 |      3 |    3 | Guests         |
+    |   12 |  NULL |   NULL | NULL | NULL           |
+    |   13 |  NULL |   NULL | NULL | NULL           |
+    +------+-------+--------+------+----------------+
+    select 
+        users.id, users.group, groups.pri_id, groups.id, groups.name
+    from
+        users
+        left outer join groups on users.group = groups.pri_id
+    order by 
+        users.id;
+    */
+    BOOST_CHECK(rs2.size() == 13);
+    for (size_t i = 0;i < rs2.size(); ++i)
+    {
+        BOOST_CHECK(rs2[i][1].i() == rs2[i][2].i());
+        BOOST_CHECK(rs2[i][1].isNull() == rs2[i][2].isNull());
+    }
+    rsg2 = *rsg.clone();
+    rs2 = *rs.clone();
+
+    rq.reset().when(_T("group"), _T("="), _T("pri_id"));
+    rs2.join(rsg, rq);
+    /*
+    rs2.dump();
+    +------+-------+--------+------+----------------+
+    |   id | group | pri_id |   id | name           |
+    +------+-------+--------+------+----------------+
+    |    1 |     1 |      1 |    1 | Administrators |
+    |    2 |     2 |      2 |    2 | Users          |
+    |    4 |     2 |      2 |    2 | Users          |
+    |    6 |     4 |      4 | NULL | Unknowns       |
+    |    7 |     2 |      2 |    2 | Users          |
+    |    8 |     3 |      3 |    3 | Guests         |
+    |    9 |     4 |      4 | NULL | Unknowns       |
+    |   10 |     1 |      1 |    1 | Administrators |
+    |   11 |     3 |      3 |    3 | Guests         |
+    +------+-------+--------+------+----------------+
+    select 
+        users.id, users.group, groups.pri_id, groups.id, groups.name
+    from
+        users
+        inner join groups on users.group = groups.pri_id
+    order by 
+        users.id;
+    */
+    BOOST_CHECK(rs2.size() == 9);
+    for (size_t i = 0;i < rs2.size(); ++i)
+    {
+        BOOST_CHECK(rs2[i][1].i() == rs2[i][2].i());
+        BOOST_CHECK(rs2[i][1].isNull() == rs2[i][4].isNull());
+    }
+
+    rq.reset().when(_T("id"), _T("="), _T("group"));
+    rsg2.outerJoin(rs, rq);
+    /*
+    rsg2.dump();
+    +--------+------+----------------+------+-------+
+    | pri_id |   id | name           |   id | group |
+    +--------+------+----------------+------+-------+
+    |      1 |    1 | Administrators |    1 |     1 |
+    |      1 |    1 | Administrators |   10 |     1 |
+    |      2 |    2 | Users          |    2 |     2 |
+    |      2 |    2 | Users          |    4 |     2 |
+    |      2 |    2 | Users          |    7 |     2 |
+    |      3 |    3 | Guests         |    8 |     3 |
+    |      3 |    3 | Guests         |   11 |     3 |
+    |      4 | NULL | Unknowns       | NULL |  NULL |
+    +--------+------+----------------+------+-------+
+    select 
+        groups.pri_id, groups.id, groups.name, users.id, users.group 
+    from
+        groups
+        left outer join users on groups.id = users.group
+    order by 
+        groups.pri_id;
+    */
+    BOOST_CHECK(rsg2.size() == 8);
+    for (size_t i = 0;i < rsg2.size(); ++i)
+    {
+        BOOST_CHECK(rsg2[i][1].i() == rsg2[i][4].i());
+        BOOST_CHECK(rsg2[i][1].isNull() == rsg2[i][4].isNull());
+    }
+
+    rsg2 = *rsg.clone();
+    rs2 = *rs.clone();
+
+    rq.reset().when(_T("group"), _T("<"), _T("pri_id"));
+    rs2.outerJoin(rsg, rq);
+    /*
+    rs2.dump();
+    +------+-------+--------+------+----------+
+    |   id | group | pri_id |   id | name     |
+    +------+-------+--------+------+----------+
+    |    1 |     1 |      2 |    2 | Users    |
+    |    1 |     1 |      3 |    3 | Guests   |
+    |    1 |     1 |      4 | NULL | Unknowns |
+    |    2 |     2 |      3 |    3 | Guests   |
+    |    2 |     2 |      4 | NULL | Unknowns |
+    |    3 |  NULL |   NULL | NULL | NULL     |
+    |    4 |     2 |      3 |    3 | Guests   |
+    |    4 |     2 |      4 | NULL | Unknowns |
+    |    5 |  NULL |   NULL | NULL | NULL     |
+    |    6 |     4 |   NULL | NULL | NULL     |
+    |    7 |     2 |      3 |    3 | Guests   |
+    |    7 |     2 |      4 | NULL | Unknowns |
+    |    8 |     3 |      4 | NULL | Unknowns |
+    |    9 |     4 |   NULL | NULL | NULL     |
+    |   10 |     1 |      2 |    2 | Users    |
+    |   10 |     1 |      3 |    3 | Guests   |
+    |   10 |     1 |      4 | NULL | Unknowns |
+    |   11 |     3 |      4 | NULL | Unknowns |
+    |   12 |  NULL |   NULL | NULL | NULL     |
+    |   13 |  NULL |   NULL | NULL | NULL     |
+    +------+-------+--------+------+----------+
+    select 
+        users.id, users.group, groups.pri_id, groups.id, groups.name
+    from
+        users
+        left outer join groups on users.group < groups.pri_id
+    order by 
+        users.id;
+    */
+    BOOST_CHECK(rs2.size() == 20);
+    for (size_t i = 0;i < rs2.size(); ++i)
+    {
+        if (rs2[i][1].i() == 4)
+            BOOST_CHECK(rs2[i][2].isNull());
+        else if (!rs2[i][1].isNull())
+            BOOST_CHECK(rs2[i][1].i() < rs2[i][2].i());
+        else
+            BOOST_CHECK(rs2[i][1].isNull() == rs2[i][2].isNull());
+    }
+
+    // joined recordset clone
+    recordset& rs3 = *rs2.clone();
+    BOOST_CHECK(rs2.size() == 20);
+    for (size_t i = 0;i < rs2.size(); ++i)
+    {
+        if (rs3[i][1].i() == 4)
+            BOOST_CHECK(rs3[i][2].isNull());
+        else if (!rs3[i][1].isNull())
+            BOOST_CHECK(rs3[i][1].i() < rs3[i][2].i());
+        else
+            BOOST_CHECK(rs3[i][1].isNull() == rs3[i][2].isNull());
+    }
+    // more join
+    rq.reset().when(_T("group"), _T("="), _T("pri_id"));
+    rs3.join(rsg, rq);
+    /*
+    rs3.dump();
+    +------+-------+--------+------+----------+--------+------+----------------+
+    |   id | group | pri_id |   id | name     | pri_id |   id | name           |
+    +------+-------+--------+------+----------+--------+------+----------------+
+    |    1 |     1 |      2 |    2 | Users    |      1 |    1 | Administrators |
+    |    1 |     1 |      3 |    3 | Guests   |      1 |    1 | Administrators |
+    |    1 |     1 |      4 | NULL | Unknowns |      1 |    1 | Administrators |
+    |    2 |     2 |      3 |    3 | Guests   |      2 |    2 | Users          |
+    |    2 |     2 |      4 | NULL | Unknowns |      2 |    2 | Users          |
+    |    4 |     2 |      3 |    3 | Guests   |      2 |    2 | Users          |
+    |    4 |     2 |      4 | NULL | Unknowns |      2 |    2 | Users          |
+    |    6 |     4 |   NULL | NULL | NULL     |      4 | NULL | Unknowns       |
+    |    7 |     2 |      3 |    3 | Guests   |      2 |    2 | Users          |
+    |    7 |     2 |      4 | NULL | Unknowns |      2 |    2 | Users          |
+    |    8 |     3 |      4 | NULL | Unknowns |      3 |    3 | Guests         |
+    |    9 |     4 |   NULL | NULL | NULL     |      4 | NULL | Unknowns       |
+    |   10 |     1 |      2 |    2 | Users    |      1 |    1 | Administrators |
+    |   10 |     1 |      3 |    3 | Guests   |      1 |    1 | Administrators |
+    |   10 |     1 |      4 | NULL | Unknowns |      1 |    1 | Administrators |
+    |   11 |     3 |      4 | NULL | Unknowns |      3 |    3 | Guests         |
+    +------+-------+--------+------+----------+--------+------+----------------+
+    */
+    
+    rs3.release();
+
+    rs2 = *rs.clone();
+    rq.reset().when(_T("group"), _T("<"), _T("pri_id"));
+    rs2.join(rsg, rq);
+    /*
+    rs2.dump();
+    +------+-------+--------+------+----------+
+    |   id | group | pri_id |   id | name     |
+    +------+-------+--------+------+----------+
+    |    1 |     1 |      2 |    2 | Users    |
+    |    1 |     1 |      3 |    3 | Guests   |
+    |    1 |     1 |      4 | NULL | Unknowns |
+    |    2 |     2 |      3 |    3 | Guests   |
+    |    2 |     2 |      4 | NULL | Unknowns |
+    |    4 |     2 |      3 |    3 | Guests   |
+    |    4 |     2 |      4 | NULL | Unknowns |
+    |    7 |     2 |      3 |    3 | Guests   |
+    |    7 |     2 |      4 | NULL | Unknowns |
+    |    8 |     3 |      4 | NULL | Unknowns |
+    |   10 |     1 |      2 |    2 | Users    |
+    |   10 |     1 |      3 |    3 | Guests   |
+    |   10 |     1 |      4 | NULL | Unknowns |
+    |   11 |     3 |      4 | NULL | Unknowns |
+    +------+-------+--------+------+----------+
+    select 
+        users.id, users.group, groups.pri_id, groups.id, groups.name
+    from
+        users
+        inner join groups on users.group < groups.pri_id
+    order by 
+        users.id,groups.pri_id; 
+
+    */
+    BOOST_CHECK(rs2.size() == 14);
+    for (size_t i = 0;i < rs2.size(); ++i)
+    {
+        BOOST_CHECK(rs2[i][1].i() < rs2[i][2].i());
+    }
+
+    rs2 = *rs.clone();
+    rq.reset().when(_T("group"), _T("="), _T("pri_id"))
+        .and_(_T("group"), _T("="), _T("id"));
+    rs2.join(rsg, rq);
+    /*
+    rs2.dump();
+    +------+-------+--------+------+----------------+
+    |   id | group | pri_id |   id | name           |
+    +------+-------+--------+------+----------------+
+    |    1 |     1 |      1 |    1 | Administrators |
+    |    2 |     2 |      2 |    2 | Users          |
+    |    4 |     2 |      2 |    2 | Users          |
+    |    7 |     2 |      2 |    2 | Users          |
+    |    8 |     3 |      3 |    3 | Guests         |
+    |   10 |     1 |      1 |    1 | Administrators |
+    |   11 |     3 |      3 |    3 | Guests         |
+    +------+-------+--------+------+----------------+
+    select 
+        users.id, users.group, groups.pri_id, groups.id, groups.name
+    from
+        users
+        inner join groups on users.group = groups.pri_id and users.group = groups.id
+    order by 
+        users.id; 
+    */
+    BOOST_CHECK(rs2.size() == 7);
+    for (size_t i = 0;i < rs2.size(); ++i)
+    {
+        BOOST_CHECK(rs2[i][1].i() == rs2[i][2].i());
+        BOOST_CHECK(rs2[i][1].i() == rs2[i][3].i());
+    }
+    rsg2.release();
+    rs2.release();
+
+    /*catch(bzs::rtl::exception& e)
+    {
+        *bzs::rtl::getCode(e);
+        _tprintf(bzs::rtl::getMsg(e)->c_str());
+    }*/
+}
+
 #pragma warning(default : 4996) 
 
 #endif // BZS_TEST_TRDCLENGN_TESTFIELD_H

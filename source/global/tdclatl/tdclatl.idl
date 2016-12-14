@@ -1431,7 +1431,7 @@ interface IRecordset : IDispatch
   HRESULT _stdcall Size([out, retval]unsigned long* retVal);
 
   [id(0x000000F)]
-  HRESULT _stdcall MatchBy(IRecordsetQuery* gq, [out, retval] IRecordset** retVal);
+  HRESULT _stdcall MatchBy([in] IRecordsetQuery* gq, [out, retval] IRecordset** retVal);
 
   [id(0x0000010)]
   HRESULT _stdcall Clone([out, retval] IRecordset** retVal);
@@ -1448,7 +1448,11 @@ interface IRecordset : IDispatch
   [id(0x0000015)]
   HRESULT _stdcall UnionRecordset([in] IRecordset* rs, [out, retval] IRecordset** retVal);
   
+  [id(0x0000016)]
+  HRESULT _stdcall Join([in] IRecordset* rs, [in] IRecordsetQuery* gq, [out, retval] IRecordset** retVal);
 
+  [id(0x0000017)]
+  HRESULT _stdcall OuterJoin([in] IRecordset* rs, [in] IRecordsetQuery* gq, [out, retval] IRecordset** retVal);
   
 };
 

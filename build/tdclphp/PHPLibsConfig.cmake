@@ -63,9 +63,9 @@ IF(PHP_EXECUTABLE)
     string(REGEX MATCH "include_path \\=\\> \\.\\:([^\\=]*) \\=\\>" PHP_INFO_INCLUDE ${PHP_INFO_INCLUDE})
   endif()
   set(PHP_INFO_INCLUDE ${CMAKE_MATCH_1})
-  string(FIND ${PHP_INFO_INCLUDE} : POS1)
+  string(FIND "${PHP_INFO_INCLUDE}" : POS1)
   if (NOT (${POS1} EQUAL -1))
-	string(SUBSTRING ${PHP_INFO_INCLUDE} 0 ${POS1} PHP_INFO_INCLUDE)
+    string(SUBSTRING ${PHP_INFO_INCLUDE} 0 ${POS1} PHP_INFO_INCLUDE)
   endif()
 
 #  Is transactd.so enabled in php.ini ?

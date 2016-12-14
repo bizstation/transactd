@@ -65,7 +65,10 @@ class dumpRecordset
         {
             row& rec = rs[i];
             for (size_t col = 0; col < fds.size(); ++col)
-                m_widths[col] = std::max(_tcslen(rec[(short)col].c_str()), m_widths[col]);
+            {
+                if (!rec[(short)col].isNull())
+                    m_widths[col] = std::max(_tcslen(rec[(short)col].c_str()), m_widths[col]);
+            }
         }
     }
 
@@ -199,12 +202,6 @@ class recordsetImple
     /* for registerMemoryBlock temp data */
     size_t m_joinRows;
 
-    /*
-            for optimazing join.
-            If the first reading is using by unique key , set that field count.
-    */
-    short m_uniqueReadMaxField;
-
 public:
     typedef std::vector<row_ptr>::iterator iterator;
     typedef row_ptr item_type;
@@ -226,7 +223,7 @@ private:
         am->setParams(ptr, size, 0, true);
         m_memblock.push_back(boost::shared_ptr<autoMemory>(am, boost::bind(&autoMemory::release, _1)));
         unsigned char* p = am->ptr;
-        // copy fileds
+        // copy fields
         if (addtype & mra_nextrows)
         {
             if (addtype == mra_nextrows)
@@ -241,13 +238,6 @@ private:
             m_mra->setCurFirstField((int)m_fds->size());
             if (tb)
                 m_fds->addSelectedFields(tb);
-            if (tb && (addtype == mra_nojoin))
-            {
-                const keydef& kd = tb->tableDef()->keyDefs[(int)tb->keyNum()];
-                m_uniqueReadMaxField = (kd.segments[0].flags.bit0 == false)
-                                           ? (short)m_fds->size()
-                                           : 0;
-            }
         }
 
         *(am->endFieldIndex) = (short)m_fds->size();
@@ -262,8 +252,7 @@ private:
             if (jmap)
             {
                 // At Join that if some base records reference to a joined
-                // record
-                //      that the joined record pointer is shared by some
+                // record that the joined record pointer is shared by some
                 // base records.
                 for (int i = 0; i < (int)rows; ++i)
                 {
@@ -322,6 +311,16 @@ private:
         return -1;
     }
 
+    inline size_t getIndexOfEndPtr(short* p, int memBlockIndex) const
+    {
+        const boost::shared_ptr<autoMemory>& am = m_memblock[memBlockIndex];
+        if ((p >= am->endFieldIndex) && (p < am->endFieldIndex + JOINLIMIT_PER_RECORD))
+            return p - am->endFieldIndex;
+
+        assert(0);
+        return -1;
+    }
+
     // Duplicate row for hasManyJoin
     void duplicateRow(int row, int count)
     {
@@ -336,18 +335,73 @@ private:
         }
     }
 
+    void assignJoinFields(const recordsetImple& r, std::vector<int>& indexes)
+    {
+        int fieldCount = (int)m_fds->size();
+        m_fds->append(r.m_fds.get());
+        
+        // append memblock
+        std::vector<short*> endIndex;
+        for (size_t i = 0;i < r.m_memblock.size(); ++i)
+        {
+            m_memblock.push_back(r.m_memblock[i]);
+            short* ei = r.m_memblock[i]->appendEndFieldIndex(*r.m_memblock[i]->endFieldIndex + fieldCount);
+            endIndex.push_back(ei);
+        }
+
+        if (r.size() == 0) return;
+
+        //counting (row * memblock)
+        int rblockSize = (int)dynamic_cast<memoryRecord*>(r.m_recordset[0])->memBlockSize();
+        int amsize = (int)(rblockSize * indexes.size());
+        
+        autoMemory* amar = autoMemory::create(amsize);
+        amsize = 0;
+        autoMemory* nullRecordAm = 0;
+        for (int i = 0; i < (int)m_recordset.size(); ++i)
+        {
+            memoryRecord* row = dynamic_cast<memoryRecord*>(m_recordset[i]);
+            for (int j = 0; j < (int)rblockSize; ++j)
+            {
+                autoMemory* mb = amar + amsize;
+                if (indexes[i] != -1)
+                {
+                    memoryRecord* srow = dynamic_cast<memoryRecord*>(r.m_recordset[indexes[i]]);
+                    assert(srow->memBlockSize() == rblockSize);
+                    const autoMemory& smb = srow->memBlock(j);
+                    int index = r.getMemBlockIndex(smb.ptr);
+                    row->setRecordData(mb, smb.ptr, 0, endIndex[index], false);
+                }else
+                {
+                    // Alloc data buffer for not found record.
+                    if (nullRecordAm == NULL)
+                    {
+                        nullRecordAm = autoMemory::create();
+                        nullRecordAm->addref();
+                        short endIndex = (short)m_fds->size();
+                        nullRecordAm->setParams(0, r.m_fds->totalFieldLen(), &endIndex, true);
+                        m_memblock.push_back(boost::shared_ptr<autoMemory>(nullRecordAm, boost::bind(&autoMemory::release, _1)));
+                    }                    
+                    row->setRecordData(mb, nullRecordAm->ptr, 0, nullRecordAm->endFieldIndex, false);
+                    // Specify fieldnum
+                    row->setInvalidMemblockLast();
+                }
+                ++amsize;
+            }
+        }
+    }
+
 public:
     inline recordsetImple()
         : m_fds(fielddefs::create(), boost::bind(&fielddefs::release, _1)),
-          m_joinRows(0), m_uniqueReadMaxField(0)
+          m_joinRows(0)
     {
         m_mra.reset(new multiRecordAlocatorImple(this));
     }
 
     inline recordsetImple(const recordsetImple& r)
         : m_fds(r.m_fds),m_mra(r.m_mra), m_recordset(r.m_recordset),
-          m_memblock(r.m_memblock), m_joinRows(r.m_joinRows),
-          m_uniqueReadMaxField(r.m_uniqueReadMaxField)
+          m_memblock(r.m_memblock), m_joinRows(r.m_joinRows)
     {
         for (size_t i = 0; i < m_recordset.size(); ++i)
             m_recordset[i]->addref();
@@ -370,7 +424,6 @@ public:
             m_recordset = r.m_recordset;
             m_memblock = r.m_memblock;
             m_joinRows = r.m_joinRows;
-            m_uniqueReadMaxField = r.m_uniqueReadMaxField;
             for (size_t i = 0; i < m_recordset.size(); ++i)
                 m_recordset[i]->addref();
         }
@@ -384,7 +437,6 @@ public:
     {
         recordsetImple* p = new recordsetImple();
         p->m_joinRows = m_joinRows;
-        p->m_uniqueReadMaxField = m_uniqueReadMaxField;
         p->m_fds.reset(m_fds->clone(), boost::bind(&fielddefs::release, _1));
 
         std::vector<size_t> offsets;
@@ -396,7 +448,7 @@ public:
                 autoMemory* am = ama + i;
                 am->addref();
                 am->setParams(m_memblock[i]->ptr, m_memblock[i]->size, 0, true);
-                *am->endFieldIndex = *m_memblock[i]->endFieldIndex;
+                am->assignEndFieldIndex(m_memblock[i]->endFieldIndex);
                 p->m_memblock.push_back(boost::shared_ptr<autoMemory>(am,  boost::bind(&autoMemory::release, _1)));
                 offsets.push_back((am->ptr - m_memblock[i]->ptr));
             }
@@ -443,8 +495,10 @@ public:
 #pragma warn .8072
                     autoMemory* a = amar + amindex;
                     const boost::shared_ptr<autoMemory>& am = p->m_memblock[index];
-                    // isInvalidRecord will be reset.
                     mr->setRecordData(a, ptr, mb.size, am->endFieldIndex, mb.owner);
+                    // set  endFieldIndex
+                    size_t offset = getIndexOfEndPtr(mb.endFieldIndex, index);
+                    a->endFieldIndex += offset;
                     ++amindex;
                 }
 
@@ -456,8 +510,6 @@ public:
         return p;
     }
 
-    inline short uniqueReadMaxField() const { return m_uniqueReadMaxField; }
-
     inline void clearRecords()
     {
         if (m_recordset.size())
@@ -468,9 +520,8 @@ public:
                     m_recordset[i]->release();
             }
         } 
-        
+
         m_recordset.clear();
-        m_uniqueReadMaxField = 0;
     }
 
     inline const fielddefs* fieldDefs() const { return m_fds.get(); }
@@ -654,8 +705,6 @@ public:
 
     inline void appendField(const _TCHAR* name, int type, short len, uchar_td decimals=0)
     {
-        assert(m_fds->size());
-        
         fielddef fd;
         memset(&fd, 0, sizeof(fielddef));
         fd.len = len;
@@ -664,6 +713,13 @@ public:
         fd.decimals = decimals;
         fd.setName(name);
         fd.setCharsetIndex((*m_fds)[0].charsetIndex());
+        appendField(fd);
+    }
+
+    inline void appendField(const fielddef& fd)
+    {
+        assert(m_fds->size());
+        
         if (blobLenBytes(fd))
             THROW_BZS_ERROR_WITH_MSG(_T("Can not append Blob or Text field."));
         m_fds->push_back(&fd);
@@ -695,6 +751,51 @@ public:
     inline void reserve(size_t size)
     {
         m_recordset.reserve(size);
+    }
+
+    void nestedLoopJoin(const recordsetImple& r, recordsetQuery& q, bool inner)
+    {
+        
+        std::vector<int> indexes;
+        size_t i = 0;
+        indexes.reserve(size() * 3);
+        q.init(m_fds.get(), r.m_fds.get());
+        while (i < size())
+        {
+            size_t j = 0;
+            size_t found = 0;
+            q.setJoinRow(m_recordset[i]);
+            while (j < r.size())
+            {
+                if (q.matchJoin(r.m_recordset[j]))
+                {
+                    indexes.push_back((int)j);
+                    ++found;
+                }
+                if(q.matchStatus() == JOIN_NO_MORERECORD)
+                    break;
+                ++j;
+            }
+            if (found == 0)
+            {
+                if (inner) 
+                    erase(i);
+                else
+                {
+                    indexes.push_back(-1);
+                    ++i;
+                }
+            }
+            else if (found == 1)
+                ++i;
+            else
+            {
+                duplicateRow((int)i, (int)(found - 1));
+                i += found;
+            }
+        }
+        assert(m_recordset.size() == indexes.size());
+        assignJoinFields(r, indexes);
     }
 
 #ifdef _DEBUG

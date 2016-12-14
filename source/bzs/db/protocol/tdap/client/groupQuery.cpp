@@ -226,32 +226,111 @@ bool fieldValues::isNull(int index) const
 }
 
 
+struct recordCompItem
+{
+    judgeFunc isMatchFunc;
+    comp1Func compFunc;
+    short index;
+    short indexTmp;        // For join match. converted field index
+    short cmpIndex;        // For CMPLOGICAL_FIELD only
+    ushort_td cmpLen;
+    uchar_td compType;
+    char combine;
+    struct
+    {
+        bool nullable : 1;
+        bool nulllog  : 1; // condition has isNull or isNotNull
+    };
+};
+
+inline char getCombine(const std::vector<std::_tstring>& tokns, int index)
+{
+	if (index + 3 < (int)tokns.size())
+	{
+		std::_tstring s = tokns[index + 3];
+		if (s == _T("or"))
+			return eCor;
+		else if (s == _T("and"))
+			return eCand;
+	}
+	return eCend;
+}
+
+inline uchar_td getCompType(const _TCHAR* v, bool compField, bool part)
+{
+
+    uchar_td compType = getFilterLogicTypeCode(v);
+    if (compField)
+        compType |= CMPLOGICAL_FIELD;
+    if (!part)
+        compType |= CMPLOGICAL_VAR_COMP_ALL;
+	return compType;
+}
+
+inline bool getNullLog(uchar_td compType)
+{
+	uchar_td log = (compType & 0xf);
+	return ((log == eIsNull) || (log == eIsNotNull));
+}
+
+inline comp1Func getCompFunc2(const fielddef& fdd, uchar_td compType)
+{
+	uchar_td type = fdd.type;
+	if (fdd.isLegacyTimeFormat())
+	{
+		if (type == ft_mytime) type = ft_mytime_num_cmp;
+		if (type == ft_mydatetime) type = ft_mydatetime_num_cmp;
+		if (type == ft_mytimestamp) type = ft_mytimestamp_num_cmp;
+	}
+	return getCompFunc(type, fdd.len, compType,
+			fdd.varLenBytes() + fdd.blobLenBytes());
+}
+
+inline short getIndex(const fielddefs* fdinfo, const std::_tstring& v)
+{
+    short index = fdinfo->indexByName(v);
+    if (index == -1)
+        THROW_BZS_ERROR_WITH_MSG(_T("recordsetQuery:Invalid field name ")
+                + std::_tstring(v));
+    return index;
+}
+
+inline bool isSingedInteger(uchar_td type) 
+{
+    return ((type == ft_integer) || (type == ft_autoinc));
+}
+
+inline bool isUnsingedInteger(uchar_td type)
+{
+    return ((type == ft_logical) || (type == ft_uinteger) || (type == ft_set) || 
+            (type == ft_bit) || (type == ft_enum) || (type == ft_autoIncUnsigned) || 
+            (type == ft_myyear));
+}
+
+bool canDirectComp(const fielddef& l, const fielddef& r)
+{
+    if (l.type == r.type && l.charsetIndex() == r.charsetIndex())
+        return true;
+    if (isSingedInteger(l.type) == isSingedInteger(r.type)) return true;
+    if (isUnsingedInteger(l.type) == isUnsingedInteger(r.type)) return true;
+    return false;
+}
+
+
 // ---------------------------------------------------------------------------
 // struct recordsetQueryImple
 // ---------------------------------------------------------------------------
 struct recordsetQueryImple
 {
-    row_ptr row;
-    struct compItem
-    {
-        judgeFunc isMatchFunc;
-        comp1Func compFunc;
-        short index;
-        short cmpIndex;        // For CMPLOGICAL_FIELD only
-        uchar_td compType;
-        char combine;
-        struct
-        {
-            bool nullable : 1;
-            bool nulllog  : 1;
-        };
-    };
-    std::vector<compItem> compItems;
-    fielddefs compFields;
+    row_ptr row;      // For matchBy condition values or join target of converted fields
+    row_ptr joinRow;  // For join target row
+    std::vector<recordCompItem> compItems; // condition parms
+    fielddefs compFields;  // condition fields
     short endIndex;
+    short matchHint;
     bool mysqlnull;
 
-    recordsetQueryImple() : row(NULL),mysqlnull(false) {}
+    recordsetQueryImple() : row(NULL), joinRow(NULL), mysqlnull(false) {}
     recordsetQueryImple(const recordsetQueryImple& r)
         : row(r.row), compItems(r.compItems), compFields(r.compFields), mysqlnull(r.mysqlnull)
     {
@@ -304,31 +383,39 @@ recordsetQuery::~recordsetQuery()
     delete m_imple;
 }
 
-void recordsetQuery::init(const fielddefs* fdinfo)
+void recordsetQuery::createTempRecord()
 {
-    m_imple->mysqlnull = fdinfo->mysqlnullEnable();
-    const std::vector<std::_tstring>& tokns = getWheres();
-    m_imple->compFields.clear();
-    m_imple->compItems.clear();
-    for (int i = 0; i < (int)tokns.size(); i += 4)
-    {
-        recordsetQueryImple::compItem itm;
-        itm.index = fdinfo->indexByName(tokns[i].c_str());
-        if (itm.index == -1)
-            THROW_BZS_ERROR_WITH_MSG(_T("recordsetQuery:Invalid field name ") + tokns[i]);
-        itm.nullable = (*fdinfo)[itm.index].isNullable();
-        m_imple->compItems.push_back(itm);
-        m_imple->compFields.push_back(&((*fdinfo)[itm.index]));
-    }
     m_imple->compFields.calcFieldPos(0 /*startIndex*/, true);
     m_imple->row = memoryRecord::create(m_imple->compFields);
     m_imple->row->addref();
     m_imple->row->setRecordData(autoMemory::create(), 0, 0, &m_imple->endIndex, true);
+}
+/*
+  init for matchBy
+*/
+void recordsetQuery::init(const fielddefs* fdinfo)
+{
+    m_imple->mysqlnull = fdinfo->mysqlnullEnable();
+    const std::vector<std::_tstring>& tokns = getWheres();
+    m_imple->row = NULL;
+    m_imple->compItems.clear();
+    m_imple->compFields.clear();
+    for (int i = 0; i < (int)tokns.size(); i += 4)
+    {
+        recordCompItem itm;
+        itm.indexTmp = -1;
+        itm.index = getIndex(fdinfo, tokns[i]);
+        itm.nullable = (*fdinfo)[itm.index].isNullable() & m_imple->mysqlnull;
+        itm.cmpLen = (*fdinfo)[itm.index].len;
+        m_imple->compItems.push_back(itm);
+        m_imple->compFields.push_back(&((*fdinfo)[itm.index]));
+    }
+    createTempRecord();
 
     int index = 0;
     for (int i = 0; i < (int)tokns.size(); i += 4)
     {
-        recordsetQueryImple::compItem& itm = m_imple->compItems[index];
+        recordCompItem& itm = m_imple->compItems[index];
         field fd = (*m_imple->row)[index];
 
         std::_tstring value = tokns[i + 2];
@@ -337,66 +424,163 @@ void recordsetQuery::init(const fielddefs* fdinfo)
         {
             value.erase(value.begin());
             value.erase(value.end() - 1);
-            itm.cmpIndex = fdinfo->indexByName(value);
-            if (itm.cmpIndex == -1)
-                THROW_BZS_ERROR_WITH_MSG(_T("recordsetQuery:Invalid field name ") + value);
+            itm.cmpIndex = getIndex(fdinfo, value);
         }
         else
             fd = value.c_str();
         bool part = fd.isCompPartAndMakeValue();
-        itm.compType = getFilterLogicTypeCode(tokns[i + 1].c_str());
-        if (compField)
-            itm.compType |= CMPLOGICAL_FIELD;
-        if (!part)
-            itm.compType |= CMPLOGICAL_VAR_COMP_ALL;
-        eCompType log = (eCompType)(itm.compType & 0xf);
-        itm.nulllog = ((log == eIsNull) || (log == eIsNotNull));
+        itm.compType = getCompType(tokns[i + 1].c_str(), compField, part);
+        itm.nulllog = (m_imple->mysqlnull && getNullLog(itm.compType));
         fielddef& fdd = const_cast<fielddef&>(m_imple->compFields[index]);
         fdd.len = m_imple->compFields[index].compDataLen((const uchar_td*)fd.ptr(), part);
-        uchar_td type = fdd.type; 
-        if (fdd.isLegacyTimeFormat())
-        {
-            if (type == ft_mytime) type = ft_mytime_num_cmp; 
-            if (type == ft_mydatetime) type = ft_mydatetime_num_cmp; 
-            if (type == ft_mytimestamp) type = ft_mytimestamp_num_cmp; 
-        }
-
-        itm.compFunc = getCompFunc(type, fdd.len, itm.compType, 
-                fdd.varLenBytes() + fdd.blobLenBytes());
+        itm.compFunc = getCompFunc2(fdd, itm.compType);
         itm.isMatchFunc = getJudgeFunc((eCompType)itm.compType);
-
-        if (i + 3 < (int)tokns.size())
-        {
-            std::_tstring s = tokns[i + 3];
-            if (s == _T("or"))
-                itm.combine = eCor;
-            else if (s == _T("and"))
-                itm.combine = eCand;
+        itm.combine = getCombine(tokns, i);
+        itm.cmpLen = fdd.len;
+        if (itm.compType & CMPLOGICAL_FIELD)
+        {   // No field type convert
+            const fielddef& fdr = m_imple->compFields[itm.cmpIndex]; 
+            itm.cmpLen = std::min(fdd.len, fdr.len);
         }
-        else
-            itm.combine = eCend;
         ++index;
     }
+}
+
+/*
+  init for join
+*/
+void recordsetQuery::init(const fielddefs* fdinfo, const fielddefs* rfdinfo)
+{
+    m_imple->mysqlnull = fdinfo->mysqlnullEnable();
+    const std::vector<std::_tstring>& tokns = getWheres();
+    m_imple->row = NULL;
+    m_imple->compItems.clear();
+    m_imple->compFields.clear();
+    for (int i = 0; i < (int)tokns.size(); i += 4)
+    {
+        recordCompItem itm;
+        itm.indexTmp = -1;
+        itm.index = getIndex(fdinfo, tokns[i]);
+        itm.cmpIndex = getIndex(rfdinfo, tokns[i+2]);
+        itm.nullable = true;//(*fdinfo)[itm.index].isNullable() | (*rfdinfo)[itm.cmpIndex].isNullable();
+        itm.compType = getCompType(tokns[i + 1].c_str(), true, false);
+        itm.nulllog = getNullLog(itm.compType);
+        if (itm.nulllog)
+            THROW_BZS_ERROR_WITH_MSG(_T("recordsetQuery:Join can not use null compare. "));
+        
+        itm.isMatchFunc = getJudgeFunc((eCompType)itm.compType);
+        itm.combine = getCombine(tokns, i);
+
+        // different field type
+        const fielddef& fdd = (*fdinfo)[itm.index];
+        const fielddef& fddr = (*rfdinfo)[itm.cmpIndex];
+        if (fdd.isBlob() || fddr.isBlob())
+            THROW_BZS_ERROR_WITH_MSG(_T("recordsetQuery: BLOB or TEXT can not use for join key field. "));
+        if (!canDirectComp(fdd, fddr))
+        {
+            m_imple->compFields.push_back(&fddr);
+            short index = (short)m_imple->compFields.size() - 1;
+            itm.indexTmp = index;
+            if (fdd.isNullable())
+            {
+                fielddef& fd = const_cast<fielddef&>(m_imple->compFields[index]);
+                fd.setNullable(true, fdd.isDefaultNull());
+            }
+            itm.cmpLen = fddr.len;
+            itm.compFunc = getCompFunc2(fddr, itm.compType);
+
+        }else
+        {   // same type
+            const fielddef& fdest = (fdd.len < fddr.len) ? fdd : fddr;
+            itm.cmpLen = fdest.len;
+            itm.compFunc = getCompFunc2(fdest, itm.compType);
+        }
+        m_imple->compItems.push_back(itm);
+    }
+    if (m_imple->compFields.size())
+        createTempRecord();
+}
+
+void recordsetQuery::setJoinRow(const row_ptr row)
+{
+    if (m_imple->row)
+    {
+        // Convert data type
+        for (size_t i = 0; i < m_imple->compItems.size(); ++i)
+        {
+            recordCompItem& itm = m_imple->compItems[i];
+            if (itm.indexTmp != -1)
+            {
+                field f = (*m_imple->row)[itm.indexTmp];
+                const field& fd = (*row)[itm.index];
+                if (fd.isNull())
+                    f.setNull(true);
+                else
+                    f = fd.c_str();
+            }
+        }
+    }
+    else
+        m_imple->joinRow = row;   
+}
+
+#define HINT_LEFT_NULL 1
+/*
+  match for join
+*/
+bool recordsetQuery::matchJoin(const row_ptr rrow) const
+{
+    m_imple->matchHint = 0;
+    for (int i = 0; i < (int)m_imple->compItems.size(); ++i)
+    {
+        recordCompItem& itm = m_imple->compItems[i];
+        bool ret;
+        int nullJudge = 2;
+        const field& f = itm.indexTmp == -1 ? (*m_imple->joinRow)[itm.index] : (*m_imple->row)[itm.indexTmp];
+        const field& fr = (*rrow)[itm.cmpIndex];
+        if (itm.nullable)
+            nullJudge = f.nullCompMatch(fr, 0);
+        if (nullJudge < 2)
+        {
+            ret = (nullJudge == 0);
+            m_imple->matchHint |= (nullJudge == -1) ? HINT_LEFT_NULL : 0;
+        }
+        else
+        {
+            nullJudge = itm.compFunc((const char*)f.ptr(), (const char*)fr.ptr(), itm.cmpLen);
+            ret = itm.isMatchFunc(nullJudge);
+        }
+        if (isEndComp(itm.combine, ret)) return ret;
+    }
+    return true;
+}
+
+int recordsetQuery::matchStatus() const
+{
+    if (m_imple->matchHint & HINT_LEFT_NULL && m_imple->compItems.size() == 1)
+        return JOIN_NO_MORERECORD;
+
+    return 0;
 }
 
 bool recordsetQuery::match(const row_ptr row) const
 {
     for (int i = 0; i < (int)m_imple->compItems.size(); ++i)
     {
-        recordsetQueryImple::compItem& itm = m_imple->compItems[i];
+        recordCompItem& itm = m_imple->compItems[i];
         bool ret;
         int nullJudge = 2;
         const field& f = (*row)[itm.index];
-        if (m_imple->mysqlnull && (itm.nullable || itm.nulllog))
+        if (itm.nullable || itm.nulllog)
             nullJudge = f.nullComp((eCompType)(itm.compType & 0xf));
         if (nullJudge < 2)
             ret = (nullJudge == 0) ? true : false;
         else
         {
             if (itm.compType & CMPLOGICAL_FIELD)
-                ret = itm.isMatchFunc(itm.compFunc((const char*)f.ptr(), (const char*)(*row)[itm.cmpIndex].ptr(), f.len()));
+                ret = itm.isMatchFunc(itm.compFunc((const char*)f.ptr(), (const char*)(*row)[itm.cmpIndex].ptr(), itm.cmpLen));
             else
-                ret = itm.isMatchFunc(itm.compFunc((const char*)f.ptr(), (const char*)((*m_imple->row)[i].ptr()), (*m_imple->row)[i].len()));
+                ret = itm.isMatchFunc(itm.compFunc((const char*)f.ptr(), (const char*)((*m_imple->row)[i].ptr()), itm.cmpLen));
         }
         if (isEndComp(itm.combine, ret)) return ret;
     }
