@@ -10437,18 +10437,12 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_nstable_getCreateSql) {
   bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
-  char *arg2 = (char *) 0 ;
-  uint_td *arg3 = (uint_td *) 0 ;
   zval_args_type args[1];
   char *result = 0 ;
   
-  {
-    uint_td n = 65000;
-    uint_td* n_p = &n;
-    char* p = new char[n];
-    arg2 = p;
-    arg3 = n_p;
-  }
+  uint_td n = 65000;
+  char* p = new char[n];
+
   SWIG_ResetError(TSRMLS_C);
   if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
     WRONG_PARAM_COUNT;
@@ -10462,7 +10456,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_getCreateSql) {
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
     try {
-      result = (char *)(arg1)->getCreateSql(arg2,arg3);
+      result = (char *)(arg1)->getCreateSql(p, &n);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -10477,12 +10471,12 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_getCreateSql) {
     }
   }
   {
-    delete [] arg2;
+    delete [] p;
   }
   return;
 fail:
   {
-    delete [] arg2;
+    delete [] p;
   }
   SWIG_FAIL(TSRMLS_C);
 }
@@ -20825,18 +20819,14 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_getCreateViewSql) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
   _TCHAR *arg2 = (_TCHAR *) 0 ;
-  char *arg3 = (char *) 0 ;
-  uint_td *arg4 = (uint_td *) 0 ;
   zval_args_type args[2];
   char *result = 0 ;
   
-  {
-    uint_td n = 65000;
-    uint_td* n_p = &n;
-    char* p = new char[n];
-    arg3 = p;
-    arg4 = n_p;
-  }
+  uint_td n = 65000;
+  char* p = new char[n];
+
+
+
   SWIG_ResetError(TSRMLS_C);
   if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
     WRONG_PARAM_COUNT;
@@ -20856,7 +20846,7 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_getCreateViewSql) {
   }
   {
     try {
-      result = (char *)(arg1)->getCreateViewSql((_TCHAR const *)arg2,arg3,arg4);
+      result = (char *)(arg1)->getCreateViewSql((_TCHAR const *)arg2, p, &n);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -20871,12 +20861,12 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_getCreateViewSql) {
     }
   }
   {
-    delete [] arg3;
+    delete [] p;
   }
   return;
 fail:
   {
-    delete [] arg3;
+    delete [] p;
   }
   SWIG_FAIL(TSRMLS_C);
 }
