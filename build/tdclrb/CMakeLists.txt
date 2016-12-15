@@ -33,6 +33,10 @@ include(../common/smart_install.cmake)
 set(this_target tdclrb)
 project(${this_target})
 
+if(APPLE)
+  transactd_set_rpath("${TRANSACTD_CLIENTS_PREFIX}")
+endif()
+
 
 # ==========================================================
 # options

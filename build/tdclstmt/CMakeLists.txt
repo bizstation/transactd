@@ -33,6 +33,10 @@ include(../common/get_boost_libs.cmake)
 get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
 project(${this_target})
 bz_force_gcc() # set compiler to gcc instead of g++
+if(APPLE)
+  cmake_policy(SET CMP0042 NEW)
+  SET(MACOSX_RPATH TRUE)
+endif()
 
 
 # ==========================================================
@@ -183,6 +187,10 @@ else()
   set_target_properties(${this_target} PROPERTIES
     SOVERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}
     VERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}.${TD_RC_VER_RELEASE})
+endif()
+if(APPLE)
+  SET(BUILD_WITH_INSTALL_RPATH)
+  SET(INSTALL_NAME_DIR @rpath/)
 endif()
 
 

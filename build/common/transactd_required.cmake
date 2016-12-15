@@ -22,7 +22,18 @@
 if(WIN32)
   set(tmp_verstr "${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
   if ("2.8.3" GREATER "${tmp_verstr}")
-    message(SEND_ERROR "CMake 2.8.3 or higher is required.  You are running version ${tmp_verstr}")
+    message(FATAL_ERROR "CMake 2.8.3 or newer is required.  You are running version ${tmp_verstr}")
+  endif()
+  include(CMakeParseArguments)
+endif()
+
+# ==========================================================
+# require 3.0.0 on Mac OS X
+# ==========================================================
+if(APPLE)
+  set(tmp_verstr "${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
+  if ("3.0.0" GREATER "${tmp_verstr}")
+    message(FATAL_ERROR "CMake 3.0.0 or newer is required.  You are running version ${tmp_verstr}")
   endif()
   include(CMakeParseArguments)
 endif()
