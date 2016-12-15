@@ -1027,22 +1027,39 @@ void nstable::throwError(const _TCHAR* caption, nstable* tb)
 _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
 {
     bool uri = false;
-    if (_tcsstr(path, _T("btrv://")) || _tcsstr(path, _T("tdap://")))
+    bool btrv = false;
+    if ((btrv = (bool)_tcsstr(path, _T("btrv://"))) || _tcsstr(path, _T("tdap://")))
         uri = true;
 #ifdef _WIN32
     if (uri == false)
         _tfullpath(buf, path, MAX_PATH);
     else
 #endif
-    stripAuth(path, buf, MAX_PATH);
-    _TUCHAR* p = _tcsmrchr((_TUCHAR*)buf, '=');
-    if (p)
-        *(p+1) = 0x00;
-    else if ((p = _tcsmrchr((_TUCHAR*)buf, '?')))
-        *p = 0x00;
-    else if ((p = _tcsmrchr((_TUCHAR*)buf, PSEPARATOR_C)) && (uri == false))
-        *p = 0x00;
+        stripAuth(path, buf, MAX_PATH);
 
+    _TUCHAR* p = _tcsmrchr((_TUCHAR*)buf, '=');
+    if (btrv && p)
+    {
+        _TUCHAR* p2 = _tcsmrchr((_TUCHAR*)buf, PSEPARATOR_C);
+        if (p2)
+        {
+            if (p > p2)
+                p2 = NULL;
+            else
+                p = NULL;
+        }
+        if (p2) *p2 = 0x00;
+        if (p) *(p + 1) = 0x00;
+    }
+    else
+    {
+        if (p)
+            *(p+1) = 0x00;
+        else if ((p = _tcsmrchr((_TUCHAR*)buf, '?')))
+            *p = 0x00;
+        else if ((p = _tcsmrchr((_TUCHAR*)buf, PSEPARATOR_C)) && (uri == false))
+            *p = 0x00;
+    }
     if (uri && !_tcsstr(buf, _T("dbfile=")))
     {
         p = _tcsmrchr((_TUCHAR*)buf, '?');
