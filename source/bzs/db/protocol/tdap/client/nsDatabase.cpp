@@ -79,6 +79,7 @@ void setTrnsctdEntryPoint(BTRCALLID_PTR p)
     MYTICALLID = p;
 }
 
+
 BTRCALLID_PTR getTrnsctdEntryPoint()
 {
     if (MYTICALLID)
@@ -86,6 +87,24 @@ BTRCALLID_PTR getTrnsctdEntryPoint()
 
     if (hTrsdDLL == NULL)
         hTrsdDLL = LoadLibraryA(LIB_PREFIX TDCLC_LIBNAME);
+
+#ifdef __APPLE__
+    if (hTrsdDLL == NULL)
+    {
+        char buf[MAX_PATH];
+        GetModuleFileName(buf);
+        if (buf[0])
+        {
+            char* p = (char*)strrchr(buf, PSEPARATOR_C);
+            if (p)
+            {
+                *p = 0x00;
+                strcat(buf, PSEPARATOR_A LIB_PREFIX TDCLC_LIBNAME);
+                hTrsdDLL = LoadLibraryA(buf);
+            }
+        }
+    }
+#endif
 
     if (hTrsdDLL)
     {

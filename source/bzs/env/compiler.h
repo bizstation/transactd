@@ -227,7 +227,7 @@
 #ifdef LINUX
 #   define LIB_PREFIX "lib"
 #else
-#   define LIB_PREFIX
+#   define LIB_PREFIX ""
 #endif
 
 #endif // BZS_ENV_COMPILER_H
