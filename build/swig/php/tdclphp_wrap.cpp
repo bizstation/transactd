@@ -16697,6 +16697,7 @@ void setRecordValueByObj(client::fieldsBase& fds, zval_args_type &obj TSRMLS_DC)
     ZVAL_STRING(&zn, buf, 0);
     zval_args_type src = obj;
     zval rz;
+    zval* result = NULL;
     // search transfer object
     if (mapArray)
     {
@@ -16704,18 +16705,18 @@ void setRecordValueByObj(client::fieldsBase& fds, zval_args_type &obj TSRMLS_DC)
         zval* name = hash_find_str(Z_ARR_P(mapArray), buf, nameTmp);
         if (name)
         {
-            zval* result = getTargetObject(name, ZVAL_P(obj), &rz TSRMLS_CC);
+            result = getTargetObject(name, ZVAL_P(obj), &rz TSRMLS_CC);
             if (result) src = ZVAL_P_TO_ARG(result);
         }
     }
     if ((ZTYPE(src) == IS_OBJECT) && hasProperty(ZVAL_P(src), &zn TSRMLS_CC))
     {
         zval tmp;
-        zval* result = readProperty(ZVAL_P(src), &zn, &tmp TSRMLS_CC);
-        if (result)
+        zval* result2 = readProperty(ZVAL_P(src), &zn, &tmp TSRMLS_CC);
+        if (result2)
         {
             client::field fd = fds[i];
-            setValue(&fd, result, 0 TSRMLS_CC);
+            setValue(&fd, result2, 0 TSRMLS_CC);
         }
     }
   }
@@ -16744,30 +16745,29 @@ void setKeyValue(client::table* tb, zval_args_type& obj TSRMLS_DC)
     client::field fd = tb->fields()[index];
     char buf[256] = {0};
     strcpy(buf, fd.def()->name());
-    zval z;
+    zval z, rz;
     ZVAL_STRING(&z, buf, 0);
-
     zval_args_type src = obj;
-    zval rz;
+    zval* result = NULL;
     if (mapArray)
     {
         zval_args_type nameTmp;
         zval* name = hash_find_str(Z_ARR_P(mapArray), buf, nameTmp);
         if (name)
         {
-            zval* result = getTargetObject(name, ZVAL_P(obj), &rz TSRMLS_CC);
+            result = getTargetObject(name, ZVAL_P(obj), &rz TSRMLS_CC);
             if (!result)
                 THROW_BZS_ERROR_WITH_MSG(_T("Can not found transferMap object of setKeyValue."));
             src = ZVAL_P_TO_ARG(result);
         }
     }
 	{
-	    zval* result = NULL;
+	    zval* result2 = NULL;
 	    zval tmp;
 	    if ((ZTYPE(src) == IS_OBJECT) && hasProperty(ZVAL_P(src), &z TSRMLS_CC))
-	        result = readProperty(ZVAL_P(src), &z, &tmp TSRMLS_CC);
-	    if (result)
-	        setValue(&fd, result, 0 TSRMLS_CC);
+	        result2 = readProperty(ZVAL_P(src), &z, &tmp TSRMLS_CC);
+	    if (result2)
+	        setValue(&fd, result2, 0 TSRMLS_CC);
 	    else
 	        THROW_BZS_ERROR_WITH_MSG(_T("Can not found key field property (or transferMap object) of setKeyValue."));
 	}
