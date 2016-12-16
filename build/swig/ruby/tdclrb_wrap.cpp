@@ -14722,22 +14722,14 @@ SWIGINTERN VALUE
 _wrap_nsdatabase_getCreateViewSql(int argc, VALUE *argv, VALUE self) {
   tdap::client::nsdatabase *arg1 = (tdap::client::nsdatabase *) 0 ;
   _TCHAR *arg2 = (_TCHAR *) 0 ;
-  char *arg3 = (char *) 0 ;
-  uint_td *arg4 = (uint_td *) 0 ;
   int res2 ;
   char *buf2 = 0 ;
   int alloc2 = 0 ;
   char *result = 0 ;
   VALUE vresult = Qnil;
   if (!check_param_count(argc, 1, 1)) return Qnil;
-  
-  {
-    uint_td n = 65000;
-    uint_td* n_p = &n;
-    char* p = new char[n];
-    arg3 = p;
-    arg4 = n_p;
-  }
+  uint_td n = 65000;
+  char* p = new char[n];
   arg1 = selfPtr(self, arg1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
@@ -14746,7 +14738,7 @@ _wrap_nsdatabase_getCreateViewSql(int argc, VALUE *argv, VALUE self) {
   arg2 = reinterpret_cast< _TCHAR * >(buf2);
   {
     try {
-      result = (char *)(arg1)->getCreateViewSql((_TCHAR const *)arg2,arg3,arg4);
+      result = (char *)(arg1)->getCreateViewSql((_TCHAR const *)arg2,p,&n);
     } 
     CATCH_BZS_AND_STD()
   }
@@ -14754,15 +14746,11 @@ _wrap_nsdatabase_getCreateViewSql(int argc, VALUE *argv, VALUE self) {
     vresult = rb_enc_str_new(result, strlen(result), utf8_enc);
   }
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  {
-    delete [] arg3;
-  }
+  delete [] p;
   return vresult;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  {
-    delete [] arg3;
-  }
+  delete [] p;
   return Qnil;
 }
 
@@ -15556,21 +15544,14 @@ SWIGINTERN VALUE
 _wrap_database_getSqlStringForCreateTable(int argc, VALUE *argv, VALUE self) {
   tdap::client::database *arg1 = (tdap::client::database *) 0 ;
   _TCHAR *arg2 = (_TCHAR *) 0 ;
-  char *arg3 = (char *) 0 ;
-  uint_td *arg4 = (uint_td *) 0 ;
   int res2 ;
   char *buf2 = 0 ;
   int alloc2 = 0 ;
   char *result = 0 ;
   VALUE vresult = Qnil;
   if (!check_param_count(argc, 1, 1)) return Qnil;
-  {
-    uint_td n = 65000;
-    uint_td* n_p = &n;
-    char* p = new char[n];
-    arg3 = p;
-    arg4 = n_p;
-  }
+  uint_td n = 65000;
+  char* p = new char[n];
   arg1 = selfPtr(self, arg1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
@@ -15579,7 +15560,7 @@ _wrap_database_getSqlStringForCreateTable(int argc, VALUE *argv, VALUE self) {
   arg2 = reinterpret_cast< _TCHAR * >(buf2);
   {
     try {
-      result = (char *)(arg1)->getSqlStringForCreateTable((_TCHAR const *)arg2,arg3,arg4);
+      result = (char *)(arg1)->getSqlStringForCreateTable((_TCHAR const *)arg2, p, &n);
     } 
     CATCH_BZS_AND_STD()
   }
@@ -15587,15 +15568,11 @@ _wrap_database_getSqlStringForCreateTable(int argc, VALUE *argv, VALUE self) {
     vresult = rb_enc_str_new(result, strlen(result), utf8_enc);
   }
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  {
-    delete [] arg3;
-  }
+  delete [] p;
   return vresult;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  {
-    delete [] arg3;
-  }
+  delete [] p;
   return Qnil;
 }
 
