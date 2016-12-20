@@ -86,6 +86,22 @@ endif()
 
 
 # ==========================================================
+#   transactd_set_rpath
+# ==========================================================
+if(NOT COMMAND transactd_set_rpath)
+macro(transactd_set_rpath prefix)
+  SET(CMAKE_SKIP_BUILD_RPATH TRUE)
+  SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+  if("${prefix}" STREQUAL "")
+    SET(CMAKE_INSTALL_RPATH "/usr/lib")
+  else()
+    SET(CMAKE_INSTALL_RPATH "${prefix}")
+  endif()
+endmacro()
+endif()
+
+
+# ==========================================================
 #   transactd_set_exe_output
 # ==========================================================
 if(NOT COMMAND transactd_set_exe_output)

@@ -261,4 +261,8 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp);
 #define wcstoull _wcstoui64 
 #endif
 
+#ifdef __APPLE__
+char* GetModuleFileName(char* retBuf);
+#endif
+
 #endif // BZS_ENV_CROSSCOMPILE_H

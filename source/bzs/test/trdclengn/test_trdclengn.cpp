@@ -5297,6 +5297,8 @@ void testGetDirUri()
     nstable::getDirURI(_T("btrv://root@localhost/db"), retbuf);
     BOOST_CHECK(_tcscmp(_T("btrv://localhost/db?dbfile="), retbuf) == 0);
 #ifdef _WIN32
+    nstable::getDirURI(_T("btrv://root@localhost/db?dbfile=..\\system\\test.bdf"), retbuf);
+    BOOST_CHECK(_tcscmp(_T("btrv://localhost/db?dbfile=..\\system"), retbuf) == 0);
     nstable::getDirURI(_T("c:\\temp\\abc\\abc.def"), retbuf);
     BOOST_CHECK(_tcscmp(_T("c:\\temp\\abc"), retbuf) == 0);
 #endif

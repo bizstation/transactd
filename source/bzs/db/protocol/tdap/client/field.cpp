@@ -2266,7 +2266,7 @@ int field::nullCompMatch(const field& r, char log) const
     if (lnull) return -1;
 
     bool rnull = r.isNull();
-    if (lnull) return 1;
+    if (rnull) return 1;
     return 2;
 }
 

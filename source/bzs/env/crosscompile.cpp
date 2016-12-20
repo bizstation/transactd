@@ -135,6 +135,21 @@ char16_t* wmemcpy(char16_t* dest, const char16_t* src, size_t count)
 
 #endif // LINUX
 
+#ifdef __APPLE__
+#include <dlfcn.h>
+/* buffer size need 266 bytes */
+char* GetModuleFileName(char* retBuf)
+{
+    retBuf[0] = 0x00;
+    Dl_info info;
+    if (dladdr(reinterpret_cast<void*>(GetModuleFileName), &info) == 0)
+        return retBuf;
+    strcpy(retBuf, info.dli_fname);
+    return retBuf;
+}
+#endif //__APPLE__
+
+
 #if (defined(_WIN32) && !defined(__MINGW32__))
 #include <windows.h>
 #include "crosscompile.h"

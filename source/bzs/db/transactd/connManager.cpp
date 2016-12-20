@@ -108,7 +108,7 @@ void connManager::getDatabaseList(igetDatabases* dbm, const module* mod) const
             rec.inSnapshot = db->inSnapshot();
             if (rec.inTransaction)
             {
-                if (db->transactionIsolation() == ISO_REPEATABLE_READ)
+                if (db->transactionIsolation() >= ISO_REPEATABLE_READ)
                     rec.type = MULTILOCK_GAP;
                 else if (db->transactionIsolation() == ISO_READ_COMMITTED)
                 {
@@ -122,7 +122,7 @@ void connManager::getDatabaseList(igetDatabases* dbm, const module* mod) const
             {
                 if (db->transactionIsolation() == 0)
                     rec.type = CONSISTENT_READ;
-                else if (db->transactionIsolation() == ISO_REPEATABLE_READ)
+                else if (db->transactionIsolation() >= ISO_REPEATABLE_READ)
                     rec.type = MULTILOCK_GAP_SHARE;
                 else if (db->transactionIsolation() == ISO_READ_COMMITTED)
                     rec.type = MULTILOCK_NOGAP_SHARE;

@@ -34,6 +34,10 @@ get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
 project(${this_target})
 bz_force_gcc() # set compiler to gcc instead of g++
 
+if(APPLE)
+  transactd_set_rpath("${TRANSACTD_CLIENTS_PREFIX}")
+endif()
+
 
 # ==========================================================
 # options

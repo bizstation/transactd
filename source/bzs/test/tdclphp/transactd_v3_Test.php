@@ -886,8 +886,8 @@ class TransactdTest extends PHPUnit_Framework_TestCase
         }
         $this->assertNotEquals($bpos->pos, 0);
         $this->assertNotEquals($bpos->filename, "");
-        echo PHP_EOL.'binlog pos = '.$bpos->filename.':'.$bpos->pos.PHP_EOL;
-        echo 'gtid (set)= '.$bpos->gtid.PHP_EOL;
+        //echo PHP_EOL.'binlog pos = '.$bpos->filename.':'.$bpos->pos.PHP_EOL;
+        //echo 'gtid (set)= '.$bpos->gtid.PHP_EOL;
    
         //setGtid
         $bpos->gtid = "ABCD";
@@ -989,7 +989,7 @@ class TransactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($mgr->stat(), 0);
         $this->assertEquals($mgr->slaveStatusName(0), "Slave_IO_State");
         for ($i = 0; $i < $recs->size(); $i++) {
-            echo(PHP_EOL . $mgr->slaveStatusName($i) . "\t:" . $recs[$i]->value);
+            //echo(PHP_EOL . $mgr->slaveStatusName($i) . "\t:" . $recs[$i]->value);
         }
         
         //extendedvars

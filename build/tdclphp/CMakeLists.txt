@@ -31,6 +31,10 @@ include(../common/get_boost_libs.cmake)
 set(this_target tdclphp)
 project(${this_target})
 
+if(APPLE)
+  transactd_set_rpath("${TRANSACTD_CLIENTS_PREFIX}")
+endif()
+
 
 # ==========================================================
 # find php package
