@@ -1027,7 +1027,7 @@ describe Transactd, 'V3Features' do
     expect(mgr.stat()).to eq 0
     expect(mgr.slaveStatusName(0)).to eq "Slave_IO_State"
     for i in 0...recs.size() do
-      puts (mgr.slaveStatusName(i) + "\t:" + recs[i].value.to_s)
+      # puts (mgr.slaveStatusName(i) + "\t:" + recs[i].value.to_s)
     end
     # extendedvars
     recs = mgr.extendedvars()
