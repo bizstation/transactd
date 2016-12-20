@@ -32297,13 +32297,14 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_c_use__SWIG_0) {
-  bzs::db::protocol::tdap::client::pooledDbManager *arg1 = (bzs::db::protocol::tdap::client::pooledDbManager *) 0 ;
-  bzs::db::protocol::tdap::client::connectParams *arg2 = (bzs::db::protocol::tdap::client::connectParams *) 0 ;
+ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_c_use) {
+  pooledDbManager *arg1 = 0 ;
+  connectParams *arg2 = 0 ;
   zval_args_type args[2];
   
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+  int argc = ZEND_NUM_ARGS();
+  if(argc < 1 || argc > 2 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
@@ -32312,94 +32313,27 @@ ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_c_use__SWIG_0) {
       SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of pooledDbManager_c_use. Expected SWIGTYPE_p_bzs__client__pooledDbManager");
     }
   }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  if (argc == 2)
   {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[1], (void **) &arg2, SWIGTYPE_p_bzs__client__connectParams, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of pooledDbManager_c_use. Expected SWIGTYPE_p_bzs__client__connectParams");
-    }
-  }
-  {
-    try {
-      (arg1)->use((bzs::db::protocol::tdap::client::connectParams const *)arg2);
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_c_use__SWIG_1) {
-  bzs::db::protocol::tdap::client::pooledDbManager *arg1 = (bzs::db::protocol::tdap::client::pooledDbManager *) 0 ;
-  zval_args_type args[1];
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__client__pooledDbManager, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of pooledDbManager_c_use. Expected SWIGTYPE_p_bzs__client__pooledDbManager");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    try {
-      (arg1)->use();
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_c_use) {
-  int argc;
-  zval_args_type argv[2];
-  
-  argc = ZEND_NUM_ARGS();
-  zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
-  if (argc == 1) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__client__pooledDbManager, 0) >= 0);
-    }
-    if (_v) {
-      _wrap_pooledDbManager_c_use__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__client__pooledDbManager, 0) >= 0);
-    }
-    if (_v) {
+      if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
       {
-        void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__client__connectParams, 0) >= 0);
+        if(SWIG_ConvertPtr(ZVAL_ARGS[1], (void **) &arg2, SWIGTYPE_p_bzs__client__connectParams, 0) < 0) {
+          SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of pooledDbManager_c_use. Expected SWIGTYPE_p_bzs__client__connectParams");
+        }
       }
-      if (_v) {
-        _wrap_pooledDbManager_c_use__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-      }
+  }
+  {
+    try {
+      (arg1)->use(arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
   
-  SWIG_ErrorCode() = E_ERROR;
-  SWIG_ErrorMsg() = "No matching function for overloaded 'pooledDbManager_c_use'";
+  return;
+fail:
   SWIG_FAIL(TSRMLS_C);
 }
 

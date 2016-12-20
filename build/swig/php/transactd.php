@@ -779,7 +779,7 @@ class Bookmark
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_BOOKMARK') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -857,7 +857,7 @@ class Flags
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__FLAGS') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -917,7 +917,7 @@ class KeySegment
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__keySegment') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -948,9 +948,6 @@ class Keydef
 
     public function __get($var)
     {
-        /*if ($var === 'segments') {
-            return new keySegment(keydef_segments_get($this->cPtr));
-        }*/
         if ($var === 'keyNumber') {
             return keydef_keyNumber_get($this->cPtr);
         }
@@ -980,11 +977,7 @@ class Keydef
      */
     public function segment($index)
     {
-        $r=keydef_segment($this->cPtr, $index);
-        if (is_resource($r)) {
-            return new KeySegment($r);
-        }
-        return $r;
+        return new KeySegment(keydef_segment($this->cPtr, $index));
     }
     /**
      *
@@ -992,7 +985,7 @@ class Keydef
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__keydef') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -1063,7 +1056,7 @@ class Fielddef_t_my
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__fielddef_tT_64_t') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -1316,7 +1309,7 @@ class Fielddef extends fielddef_t_my
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__fielddef') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -1390,7 +1383,7 @@ class Tabledef
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__tabledef') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -1500,11 +1493,7 @@ class Tabledef
      */
     public function fieldDef($index)
     {
-        $r=tabledef_fieldDef($this->cPtr, $index);
-        if (is_resource($r)) {
-            return new Fielddef($r);
-        }
-        return $r;
+        return new Fielddef(tabledef_fieldDef($this->cPtr, $index));
     }
     /**
      *
@@ -1513,11 +1502,7 @@ class Tabledef
      */
     public function keyDef($index)
     {
-        $r=tabledef_keyDef($this->cPtr, $index);
-        if (is_resource($r)) {
-            return new Keydef($r);
-        }
-        return $r;
+        return new Keydef(tabledef_keyDef($this->cPtr, $index));
     }
 }
 /**
@@ -1586,7 +1571,7 @@ class BtrVersion
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__btrVersion') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -1616,7 +1601,7 @@ class BtrVersions
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__btrVersions') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -1627,31 +1612,7 @@ class BtrVersions
 abstract class Nstable
 {
     public $cPtr=null;
-    /*protected $pData=array();
-
-    public function __set($var, $value)
-    {
-        if ($var === 'thisown') {
-            return swig_transactd_alter_newobject($this->cPtr, $value);
-        }
-        $this->pData[$var] = $value;
-    }
-
-    public function __get($var)
-    {
-        if ($var === 'thisown') {
-            return swig_transactd_get_newobject($this->cPtr);
-        }
-        return $this->pData[$var];
-    }
-
-    public function __isset($var)
-    {
-        if ($var === 'thisown') {
-            return true;
-        }
-        return array_key_exists($var, $this->pData);
-    }*/
+    
     /**
      *
      * @param resource|null $res
@@ -2268,7 +2229,7 @@ abstract class RangeIterator implements \Iterator
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__transactd__connection__record') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -2346,7 +2307,7 @@ class ConnRecords implements \ArrayAccess, \Countable , \IteratorAggregate
      */
     public function __construct($res)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__connMgr__records') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -4037,7 +3998,7 @@ class Query extends QueryBase
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__query') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -4132,7 +4093,7 @@ class Bitset implements \ArrayAccess
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__bitset') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -4267,7 +4228,7 @@ class BinlogPos
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__binlogPos') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -4309,7 +4270,7 @@ class Nsdatabase
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__nsdatabase') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -4952,7 +4913,7 @@ class Database extends Nsdatabase
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__database') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -5042,7 +5003,7 @@ class Benchmark
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__rtl__benchmark') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -5100,7 +5061,7 @@ class BtrDate
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__btrDate') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -5159,7 +5120,7 @@ class BtrTime
      */
    public function __construct($res=null)
    {
-       if (is_resource($res) && get_resource_type($res) === '_p_bzs__btrTime') {
+       if (is_resource($res)) {
            $this->cPtr=$res;
            return;
        }
@@ -5221,7 +5182,7 @@ class BtrDateTime
      */
    public function __construct($res=null)
    {
-       if (is_resource($res) && get_resource_type($res) === '_p_bzs__btrDateTime') {
+       if (is_resource($res)) {
            $this->cPtr=$res;
            return;
        }
@@ -5271,7 +5232,7 @@ class BtrTimeStamp
 
     public function __construct($i_or_p_or_d, $t=null)
     {
-        if (is_resource($i_or_p_or_d) && get_resource_type($i_or_p_or_d) === '_p_bzs__btrTimeStamp') {
+        if (is_resource($i_or_p_or_d)) {
             $this->cPtr=$i_or_p_or_d;
             return;
         }
@@ -5480,7 +5441,7 @@ class Fielddefs implements \ArrayAccess, \Countable, \IteratorAggregate
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__fielddefs') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -5568,7 +5529,7 @@ class Field
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__field') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -6104,7 +6065,7 @@ class ConnectParams
     public function __construct($protocol_or_uri, $hostOrIp=null, $dbname=null, $schemaTable=null,
                             $username=null, $passwd=null)
     {
-        if (is_resource($protocol_or_uri) && get_resource_type($protocol_or_uri) === '_p_bzs__client__connectParams') {
+        if (is_resource($protocol_or_uri)) {
             $this->cPtr=$protocol_or_uri;
             return;
         }
@@ -6265,7 +6226,7 @@ class FieldNames
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__fieldNames') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -6326,7 +6287,7 @@ class SortField
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__sortField') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -6413,7 +6374,7 @@ class SortFields
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__sortFields') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -6532,7 +6493,7 @@ class RecordsetQuery
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__recordsetQuery') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -6769,7 +6730,7 @@ class GroupQuery
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__groupQuery') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -6819,7 +6780,7 @@ class Sum extends GroupFuncBase
      */
     public function __construct($targetNames, $resultName=null)
     {
-        if (is_resource($targetNames) && get_resource_type($targetNames) === '_p_bzs__client__sum') {
+        if (is_resource($targetNames)) {
             $this->cPtr=$targetNames;
             return;
         }
@@ -6874,7 +6835,7 @@ class First extends GroupFuncBase
      */
     public function __construct($targetNames, $resultName=null)
     {
-        if (is_resource($targetNames) && get_resource_type($targetNames) === '_p_bzs__client__first') {
+        if (is_resource($targetNames)) {
             $this->cPtr=$targetNames;
             return;
         }
@@ -6929,7 +6890,7 @@ class Last extends GroupFuncBase
      */
     public function __construct($targetNames, $resultName=null)
     {
-        if (is_resource($targetNames) && get_resource_type($targetNames) === '_p_bzs__client__last') {
+        if (is_resource($targetNames)) {
             $this->cPtr=$targetNames;
             return;
         }
@@ -6982,7 +6943,7 @@ class Count extends GroupFuncBase
      */
     public function __construct($resultName)
     {
-        if (is_resource($resultName) && get_resource_type($resultName) === '_p_bzs__client__count') {
+        if (is_resource($resultName)) {
             $this->cPtr=$resultName;
             return;
         }
@@ -7032,7 +6993,7 @@ class Avg extends Sum
      */
     public function __construct($targetNames, $resultName=null)
     {
-        if (is_resource($targetNames) && get_resource_type($targetNames) === '_p_bzs__client__avg') {
+        if (is_resource($targetNames)) {
             $this->cPtr=$targetNames;
             return;
         }
@@ -7086,7 +7047,7 @@ class Min extends Sum
      */
     public function __construct($targetNames, $resultName=null)
     {
-        if (is_resource($targetNames) && get_resource_type($targetNames) === '_p_bzs__client__min') {
+        if (is_resource($targetNames)) {
             $this->cPtr=$targetNames;
             return;
         }
@@ -7140,7 +7101,7 @@ class Max extends Sum
      */
     public function __construct($targetNames, $resultName=null)
     {
-        if (is_resource($targetNames) && get_resource_type($targetNames) === '_p_bzs__client__max') {
+        if (is_resource($targetNames)) {
             $this->cPtr=$targetNames;
             return;
         }
@@ -7506,7 +7467,7 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__recordset') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             $this->fielddefs = new Fielddefs(Recordset_fieldDefs($this->cPtr));
             $this->record = new Record(memoryRecord_createRecord($this->fielddefs), $this->fielddefs);
@@ -7552,7 +7513,7 @@ class PreparedQuery
      */
     public function __construct($res)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__preparedQuery') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
@@ -7758,7 +7719,7 @@ class ActiveTable
      */
     public function __construct($mgr_or_db, $tableName, $mode=transactd::TD_OPEN_READONLY)
     {
-        if (is_resource($mgr_or_db) && get_resource_type($mgr_or_db) === '_p_bzs__client__activeTable') {
+        if (is_resource($mgr_or_db)) {
             $this->cPtr=$mgr_or_db;
             return;
         }
@@ -7775,11 +7736,7 @@ class ActiveTable
      */
     public function table()
     {
-        $r=activeTable_table($this->cPtr);
-        if (is_resource($r)) {
-            return new Table($r);
-        }
-        return $r;
+        return new Table(activeTable_table($this->cPtr));
     }
     /**
      * 
@@ -7834,7 +7791,7 @@ class PooledDbManager
      */
     public function __construct($res=null)
     {
-        if (is_resource($res) && get_resource_type($res) === '_p_bzs__client__pooledDbManager') {
+        if (is_resource($res)) {
             $this->cPtr=$res;
             return;
         }
