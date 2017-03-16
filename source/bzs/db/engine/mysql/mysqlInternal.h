@@ -724,6 +724,15 @@ inline void cp_setup_rpl_bitmap(TABLE* table){};
 
 #endif
 
+inline frm_type_enum cp_dd_frm_type(THD *thd, char *path)
+{
+#if (defined(MARIADB_10_1) && MARIADB_10_1 >= 100122)
+	return dd_frm_type(thd, path, NULL);
+#else
+	enum legacy_db_type not_used;
+	return dd_frm_type(thd, path, &not_used);
+#endif
+}
 
 class safe_mysql_mutex_lock
 {
