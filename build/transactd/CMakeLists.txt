@@ -146,8 +146,18 @@ if(WIN32)
 else()
   set(output_name libtransactd)
 endif()
+# RECOMPILE_FOR_EMBEDDED for MariaDB 10.1.23 or later
+set(RECOMPILE_FOR_EMBEDDED "")
+string(REGEX MATCH ".*MariaDB.*" TDVER_DB_TMP "${PRODUCTNAME}")
+if(NOT("${TDVER_DB_TMP}" STREQUAL ""))
+  if (MYSQL_VERSION_ID VERSION_GREATER 100122)
+    set(RECOMPILE_FOR_EMBEDDED "RECOMPILE_FOR_EMBEDDED")
+  endif()
+endif()
+
 MYSQL_ADD_PLUGIN(${this_target} ${${this_target}_SOURCE_FILES}
-  MODULE_ONLY MODULE_OUTPUT_NAME "${output_name}")
+  MODULE_ONLY MODULE_OUTPUT_NAME "${output_name}"
+  ${RECOMPILE_FOR_EMBEDDED})
 
 
 # ==========================================================
@@ -177,16 +187,16 @@ endif()
 # Add compile options and linker options
 # ==========================================================
 if(MSVC)
-  set(CMAKE_CXX_FLAGS "/W3 /wd4068 /GL /Z7 /GF /Oy- /EHa")
+  set(CMAKE_CXX_FLAGS "/W3 /wd4068 /Z7 /GF /Oy- /EHa")
   foreach(build_type "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
     bz_remove_cxx_flag("/EHsc" "${build_type}")
     bz_remove_cxx_flag("/EHs" "${build_type}")
     bz_remove_cxx_flag("/Ob2" "${build_type}")
   endforeach()
-  bz_add_cxx_flag("/MT  /Ox" "_RELEASE")
-  bz_add_cxx_flag("/MTd    " "_DEBUG")
-  bz_add_cxx_flag("/MT  /Ox" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("/MD  /Ox" "_MINSIZEREL")
+  bz_add_cxx_flag("/MT  /Ox /GL" "_RELEASE")
+  bz_add_cxx_flag("/MTd        " "_DEBUG")
+  bz_add_cxx_flag("/MT  /Ox    " "_RELWITHDEBINFO")
+  bz_add_cxx_flag("/MD  /Ox /GL" "_MINSIZEREL")
   set_target_properties(${this_target} PROPERTIES LINK_FLAGS
     "/OPT:REF /OPT:ICF")
 else()

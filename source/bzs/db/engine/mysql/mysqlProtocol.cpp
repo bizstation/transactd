@@ -516,7 +516,7 @@ public:
 #pragma warning(disable : 4271)
 #pragma warning(disable : 4267)
 #pragma warning(disable : 4244)
-#if (defined(MARIADB_10_0) || defined(MARIADB_10_1))
+#if (defined(MARIADB_10_0) || defined(MARIADB_10_1) || defined(MARIADB_10_2))
 #include "sql/slave.h"
 #include "sql/rpl_mi.h"
 
@@ -583,7 +583,7 @@ int getSlaveStatus(THD* thd, const char* channel, connection::records& recs, bzs
     char tmp[128];
 #if (defined(MYSQL_5_7))
     sprintf_s(tmp, 128, "show slave status for channel '%s'", channel);
-#elif (defined(MARIADB_10_1) || defined(MARIADB_10_0))
+#elif (defined(MARIADB_10_2) || defined(MARIADB_10_1) || defined(MARIADB_10_0))
     sprintf_s(tmp, 128, "show slave '%s' status", channel);
 #else
     sprintf_s(tmp, 128, "show slave status");
@@ -616,7 +616,7 @@ void readDbList(THD* thd, connection::records& recs)
 {
     SQL_Strings files;
     db_list(thd, &files);
-#if (defined(MARIADB_10_0) || defined(MARIADB_10_1))
+#if (defined(MARIADB_10_0) || defined(MARIADB_10_1) || defined(MARIADB_10_2))
     for (int i = 0; i < (int)files.elements(); ++i)
         appenDbList(recs, files.at(i));
 #else

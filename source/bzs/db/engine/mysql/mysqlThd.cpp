@@ -128,10 +128,12 @@ THD* buildTHD()
 {
     if (!mysqld_server_started)
         waitForServerStart();
-
+#if defined(MARIADB_10_2)
+    THD* thd = new THD(next_thread_id());
+#else
     THD* thd = new THD();
-    
     cp_set_new_thread_id(thd);
+#endif
     
     thd->thread_stack = reinterpret_cast<char*>(&thd);
     thd->store_globals();

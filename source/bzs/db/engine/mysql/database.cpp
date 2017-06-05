@@ -123,7 +123,7 @@ void tableCacheCounter::release(const std::string& dbname,
 bool lockTable(THD* thd, TABLE* tb)
 {
     bool append = (thd->lock != 0);
-#ifdef MARIADB_10_1
+#if defined(MARIADB_10_1) || defined(MARIADB_10_2)
     thd->variables.option_bits |= OPTION_TABLE_LOCK;
 #endif
     MYSQL_LOCK* lock = mysql_lock_tables(thd, &tb, 1, 0);
