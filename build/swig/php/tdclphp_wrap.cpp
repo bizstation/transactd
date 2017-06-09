@@ -16579,7 +16579,9 @@ int callConstructor(zval* return_value, zend_class_entry* ce, zval* args TSRMLS_
     zend_fcall_info fci;
     fci.size = sizeof(zend_fcall_info);
     zend_fcall_info_cache fcc;
+#if (PHP_MAJOR_VERSION < 7) || (PHP_MAJOR_VERSION == 7 && PHP_MINOR_VERSION < 1)
     fci.function_table = &ce->function_table;
+#endif
     zval retval;
 #ifdef ZEND_ENGINE_3
     ZVAL_UNDEF(&fci.function_name);
@@ -16590,7 +16592,9 @@ int callConstructor(zval* return_value, zend_class_entry* ce, zval* args TSRMLS_
     fci.retval_ptr_ptr = &pval;
 #endif
 
+#if (PHP_MAJOR_VERSION < 7) || (PHP_MAJOR_VERSION == 7 && PHP_MINOR_VERSION < 1)
     fci.symbol_table = NULL;
+#endif
     fci.param_count = 0;
     fci.params = NULL;
     fci.no_separation = 1;

@@ -316,7 +316,7 @@ void testVersion(database* db)
                 "mysql_server_Major = " << vv.versions[VER_IDX_DB_SERVER].majorVersion);
             BOOST_CHECK_MESSAGE(
                 ((5 <= vv.versions[VER_IDX_DB_SERVER].minorVersion) ||
-                 (1 >= vv.versions[VER_IDX_DB_SERVER].minorVersion)),
+                 (2 >= vv.versions[VER_IDX_DB_SERVER].minorVersion)),
                 "mysql_server_Miner = " << vv.versions[VER_IDX_DB_SERVER].minorVersion);
             int type = (int)vv.versions[VER_IDX_DB_SERVER].type;
             BOOST_CHECK_MESSAGE(((int)'M' == type) || ((int)'A' == type),

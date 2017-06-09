@@ -413,9 +413,7 @@ void schemaBuilder::listTable(database* db, std::vector<std::string>& tables, in
             std::string s = it->path().string(); // fullpath
             if (isFrmFile(it->path().filename().string(), false)) // filename
             {
-                enum legacy_db_type not_used;
-                
-                frm_type_enum ftype = dd_frm_type(db->thd(), (char*)s.c_str(), &not_used);
+                frm_type_enum ftype = cp_dd_frm_type(db->thd(), (char*)s.c_str());
                 filename_to_tablename(it->path().stem().string().c_str(), path, FN_REFLEN);
                 std::string tablename = path;
                 
@@ -476,8 +474,7 @@ short schemaBuilder::execute(database* db, table* mtb, bool nouseNullkey)
             std::string s = it->path().filename().string();
             if (isFrmFile(s))
             {
-                enum legacy_db_type not_used;
-                frm_type_enum ftype = dd_frm_type(db->thd(), (char*)it->path().string().c_str(), &not_used);
+                frm_type_enum ftype = cp_dd_frm_type(db->thd(), (char*)it->path().string().c_str());
                 if (ftype == FRMTYPE_TABLE)
                 {
                     filename_to_tablename(it->path().stem().string().c_str(), path,

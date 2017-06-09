@@ -236,7 +236,7 @@ def testVersion()
   expect(client_ver.minorVersion.to_s).to eq Transactd::CPP_INTERFACE_VER_MINOR.to_s
   expect(client_ver.type.chr).to eq 'N'
   my5x = (server_ver.majorVersion == 5) && (server_ver.minorVersion >= 5)
-  maria10 = (server_ver.majorVersion == 10) && (server_ver.minorVersion <= 1)
+  maria10 = (server_ver.majorVersion == 10) && (server_ver.minorVersion <= 2)
   expect(my5x || maria10).to be true
   tmp = (server_ver.type.chr == 'M') || (server_ver.type.chr == 'A')
   expect(tmp).to be true

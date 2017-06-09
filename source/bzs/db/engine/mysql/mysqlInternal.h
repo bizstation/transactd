@@ -54,7 +54,9 @@
 #include <mysql_version.h>
 
 #if defined(MARIADB_BASE_VERSION)
-#  if (MYSQL_VERSION_ID > 100107) 
+#  if (MYSQL_VERSION_ID > 100200)
+#    define MARIADB_10_2 MYSQL_VERSION_ID
+#  elif (MYSQL_VERSION_ID > 100107)
 #    define MARIADB_10_1 MYSQL_VERSION_ID
 #  elif (MYSQL_VERSION_ID > 100000)
 #    define MARIADB_10_0 MYSQL_VERSION_ID
@@ -187,7 +189,7 @@ extern "C" {
 #define cp_master_accsess() master_access()
 #define cp_priv_host() host().str
 #define cp_priv_user() user().str
-#else // MySQL 5.6 Mariadb 10.0 10.1                                                              
+#else // MySQL 5.6 Mariadb 10.0 10.1 10.2
 #define cp_get_sql_error() get_stmt_da()->sql_errno()
 #define cp_isOk() get_stmt_da()->is_ok()
 #define cp_set_overwrite_status(A) get_stmt_da()->set_overwrite_status(A)
@@ -195,7 +197,6 @@ extern "C" {
 #define cp_master_accsess() master_access
 #define cp_priv_host() priv_host
 #define cp_priv_user() priv_user
-
 #endif
 
 #if defined(MYSQL_5_5) 
@@ -220,7 +221,7 @@ extern "C" {
 #   endif
 #endif
 
-#if ((MYSQL_VERSION_NUM < 50600) || defined(MARIADB_BASE_VERSION)) //MySQL 5.5 Mariadb 5.5 10.0 10.1
+#if ((MYSQL_VERSION_NUM < 50600) || defined(MARIADB_BASE_VERSION)) // MySQL 5.5 Mariadb 5.5 10.0 10.1 10.2
 
 inline void add_global_thread(THD* thd) {}
 
@@ -231,7 +232,9 @@ inline void cp_thd_release_resources(THD* thd) {}
 inline void cp_restore_globals(THD* thd)
 {
     my_pthread_setspecific_ptr(THR_THD, 0);
+#if ! defined(MARIADB_10_2)
     my_pthread_setspecific_ptr(THR_MALLOC, 0);
+#endif
 }
 #if (MYSQL_VERSION_ID < 50600)
 inline void cp_thd_set_read_only(THD* thd, bool v) {}
@@ -251,7 +254,7 @@ inline bool cp_thd_get_global_read_only(THD* thd)
 inline bool cp_open_table(THD* thd, TABLE_LIST* tables,
                           Open_table_context* ot_act)
 {
-#if defined(MARIADB_10_1)
+#if defined(MARIADB_10_1) || defined(MARIADB_10_2)
     return open_table(thd, tables, ot_act);
 #else
     return open_table(thd, tables, thd->mem_root, ot_act);
@@ -359,7 +362,7 @@ inline unsigned char* cp_null_ptr(Field* fd, unsigned char* record)
     return fd->null_offset() + record;
 }
 
-#endif // MySQL 5.6. 5.7
+#endif
 
 #if (MYSQL_VERSION_NUM < 50611)
 #define ha_index_read_map index_read_map
@@ -510,7 +513,10 @@ inline  void cp_set_new_thread_id(THD* thd)
 {
     mysql_mutex_lock(&LOCK_thread_count);
     ++g_openDatabases;
+#if defined(MARIADB_BASE_VERSION) && (MYSQL_VERSION_ID > 100200) // MARIADB_10_2
+#else // Not MARIADB_10_2
     thd->variables.pseudo_thread_id = thread_id++;
+#endif
 	add_global_thread(thd);
     mysql_mutex_unlock(&LOCK_thread_count);
     thd->thread_id = thd->variables.pseudo_thread_id;
@@ -579,7 +585,11 @@ inline void cp_open_error_release(THD* thd, TABLE_LIST& tables) {}
 
 inline bool cp_query_command(THD* thd, char* str)
 {
+#if defined(MARIADB_BASE_VERSION) && (MYSQL_VERSION_ID > 100200) // MARIADB_10_2
+	return dispatch_command(COM_QUERY, thd, str, (uint)strlen(str), FALSE, FALSE);
+#else // Not MARIADB_10_2
 	return dispatch_command(COM_QUERY, thd, str, (uint)strlen(str));
+#endif
 }
 
 inline void cp_lex_clear(THD* thd)
@@ -587,40 +597,45 @@ inline void cp_lex_clear(THD* thd)
     thd->lex->many_values.empty();
 }
 
-#if defined(MARIADB_10_1) ||  defined(MARIADB_10_0)
+#if defined(MARIADB_10_2) || defined(MARIADB_10_1) || defined(MARIADB_10_0) // MariaDB 10.0 10.1 10.2
 #define NO_LOCK_OPEN
 inline TABLE_SHARE* cp_get_cached_table_share(THD* thd, const char *db, const char *name)
 {
-	return tdc_acquire_share(thd, db, name, GTS_VIEW |GTS_TABLE );
+#if defined(MARIADB_BASE_VERSION) && (MYSQL_VERSION_ID > 100200) // MARIADB_10_2
+	TABLE_LIST table;
+	table.init_one_table(db, strlen(db), name, strlen(name), name, TL_READ);
+	return tdc_acquire_share(thd, &table, GTS_VIEW |GTS_TABLE);
+#else // Not MARIADB_10_2
+	return tdc_acquire_share(thd, db, name, GTS_VIEW |GTS_TABLE);
+#endif
 }
 inline void cp_tdc_release_share(TABLE_SHARE* s)
 {
     tdc_release_share(s);
 }
 
-    #if defined(MARIADB_10_1)
+    #if defined(MARIADB_10_2) || defined(MARIADB_10_1) // MariaDB 10.1 10.2
     inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
                           void *create_info_arg, int with_db_name) 
     {
         return show_create_table(thd, table_list,  packet, 
                 (Table_specification_st*)create_info_arg, (enum_with_db_name) with_db_name);
     } 
-    #elif (MARIADB_10_0 >= 100013)
+    #elif (MARIADB_10_0 >= 100013) // MariaDB 10.0.13 or later
     inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
                           void *create_info_arg, int with_db_name) 
     {
         return show_create_table(thd, table_list,  packet, 
                 (HA_CREATE_INFO*)create_info_arg, (enum_with_db_name) with_db_name);
     }
-    #else //Mariadb 10.0.9 - .12
+    #else // Mariadb 10.0.12 or lesser
     inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
                           HA_CREATE_INFO* create_info_arg, int with_db_name)
     {
         return store_create_info(thd, table_list, packet, create_info_arg, with_db_name!=0, FALSE);
     }
-    
     #endif
-#else // Not MARIADB_10_1 || MARIADB_10_0
+#else // Not MariaDB 10.0 10.1 10.2
 
 
 inline TABLE_SHARE* cp_get_cached_table_share(THD* /*thd*/, const char *db, const char *name)
@@ -635,27 +650,37 @@ inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet
 
 #define cp_get_executed_gtids get_logged_gtids
 
-#endif // Not MARIADB_10_1 || MARIADB_10_0
+#endif // MariaDB 10.0 10.1 10.2
 
-#define STATUS_VAR_SCOPE 
+#define STATUS_VAR_SCOPE
+
+#if defined(MARIADB_10_2)
+#define DSMRR_SIZE  sizeof(DsMrr_impl)
+#else
 #define DSMRR_SIZE  0
-#endif // Not MySQL 5.7
+#endif
+
+#endif
 
 
-#if (MYSQL_VERSION_ID < 50600) || defined(MARIADB_10_0) 
-    #if defined(MARIADB_10_0)
-    inline bool cp_tdc_open_view(THD *thd, TABLE_LIST *table_list, const char *alias,
-                        const char *cache_key, uint cache_key_length,  uint flags)
-    {
-        return tdc_open_view(thd, table_list, alias, cache_key , cache_key_length, thd->mem_root, flags);
-    }
-    #else
-    inline bool cp_tdc_open_view(THD *thd, TABLE_LIST *table_list, const char *alias,
-                        const char *cache_key, uint cache_key_length,  uint flags)
-    {
-        return tdc_open_view(thd, table_list, alias, (char *)cache_key , cache_key_length, thd->mem_root, flags);
-    }
-    #endif
+#if defined(MARIADB_10_2) // MariaDB 10.2
+inline bool cp_tdc_open_view(THD *thd, TABLE_LIST *table_list, const char *alias,
+                    const char *cache_key, uint cache_key_length,  uint flags)
+{
+    return tdc_open_view(thd, table_list, flags);
+}
+#elif defined(MARIADB_10_0) // MariaDB 10.0
+inline bool cp_tdc_open_view(THD *thd, TABLE_LIST *table_list, const char *alias,
+                    const char *cache_key, uint cache_key_length,  uint flags)
+{
+    return tdc_open_view(thd, table_list, alias, cache_key , cache_key_length, thd->mem_root, flags);
+}
+#elif (MYSQL_VERSION_ID < 50600) // MySQL 5.5
+inline bool cp_tdc_open_view(THD *thd, TABLE_LIST *table_list, const char *alias,
+                    const char *cache_key, uint cache_key_length,  uint flags)
+{
+    return tdc_open_view(thd, table_list, alias, (char *)cache_key , cache_key_length, thd->mem_root, flags);
+}
 #else
 #define cp_tdc_open_view tdc_open_view
 #endif
@@ -675,9 +700,9 @@ inline uint cp_get_table_def_key(THD *thd, TABLE_LIST* tables, const char** key)
    make_db_list function is not static, but it is not list in sql_show.h.  
 */
 
-#if (defined(MARIADB_10_0) || defined(MARIADB_10_1))
+#if (defined(MARIADB_10_0) || defined(MARIADB_10_1) || defined(MARIADB_10_2)) // MariaDB 10.0 10.1 10.2
     typedef Dynamic_array<LEX_STRING*> SQL_Strings;
-#if (!defined(MARIADB_10_1))
+#if (defined(MARIADB_10_0))
     typedef struct st_lookup_field_values
     {
         LEX_STRING db_value, table_value;
@@ -693,7 +718,7 @@ inline uint cp_get_table_def_key(THD *thd, TABLE_LIST* tables, const char** key)
         memset(&lv, 0 ,sizeof(LOOKUP_FIELD_VALUES));
         return make_db_list(thd, files, &lv);
     }
-#else
+#else // Not MariaDB 10.0 10.1 10.2
     typedef List<LEX_STRING> SQL_Strings;
     inline int db_list(THD *thd, SQL_Strings *files)
     {
@@ -707,12 +732,12 @@ inline uint cp_get_table_def_key(THD *thd, TABLE_LIST* tables, const char** key)
         return find_files(thd, files, NullS,  mysql_data_home, "", true, &tmp_mem_root);
 #else
         return find_files(thd, files, NullS,  mysql_data_home, "", true);
-#endif        
-    }
 #endif
+    }
+#endif // MariaDB 10.0 10.1 10.2
 
 
-#if (defined(MARIADB_10_1) && MARIADB_10_1 > 100108)
+#if defined(MARIADB_10_2) || (defined(MARIADB_10_1) && MARIADB_10_1 > 100108) // later than MariaDB 10.1.8
 inline void cp_setup_rpl_bitmap(TABLE* table)
 {
     bitmap_set_all(table->write_set);
@@ -724,6 +749,15 @@ inline void cp_setup_rpl_bitmap(TABLE* table){};
 
 #endif
 
+inline frm_type_enum cp_dd_frm_type(THD *thd, char *path)
+{
+#if defined(MARIADB_10_2) || (defined(MARIADB_10_1) && MARIADB_10_1 >= 100122) // MariaDB 10.1.22 or later
+	return dd_frm_type(thd, path, NULL);
+#else
+	enum legacy_db_type not_used;
+	return dd_frm_type(thd, path, &not_used);
+#endif
+}
 
 class safe_mysql_mutex_lock
 {
@@ -751,7 +785,7 @@ struct innodb_prebuit
     //unsigned int dummy; // Bit flags
     
 	unsigned	sql_stat_start:1;
-#ifndef MYSQL_5_7 
+#if ! (defined(MYSQL_5_7) || defined(MARIADB_10_2))
 	unsigned	mysql_has_locked:1;
 #endif
 	unsigned	clust_index_was_generated:1;
