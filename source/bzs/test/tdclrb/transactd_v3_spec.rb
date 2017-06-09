@@ -932,7 +932,6 @@ describe Transactd, 'V3Features' do
     db.execSql("create view idlessthan5 as select * from user where id < 5")
     view = db.getCreateViewSql("idlessthan5")
     expect(view.include?("idlessthan5")).to eq true
-    expect(view.include?("名前")).to eq true
     #puts("view" + view)
     tb = db.openTable("user")
     expect(db.stat()).to eq 0

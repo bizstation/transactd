@@ -903,7 +903,6 @@ class TransactdTest extends PHPUnit_Framework_TestCase
         $db->execSql("create view idlessthan5 as select * from user where id < 5");
         $view = $db->getCreateViewSql("idlessthan5");
         $this->assertEquals((strpos($view, "idlessthan5") !== false), true);
-        $this->assertEquals((strpos($view, "名前") !== false), true);
         //echo($view);
         $tb = $db->openTable("user");
         $this->assertEquals($db->stat(), 0);

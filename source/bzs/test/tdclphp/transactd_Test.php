@@ -345,7 +345,7 @@ class TransactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($client_ver->minorVersion, Transactd::CPP_INTERFACE_VER_MINOR);
         $this->assertEquals(chr($client_ver->type), 'N');
         $my5x = ($server_ver->majorVersion == 5) && ($server_ver->minorVersion >= 5);
-        $maria10 = ($server_ver->majorVersion == 10) && ($server_ver->minorVersion <= 1);
+        $maria10 = ($server_ver->majorVersion == 10) && ($server_ver->minorVersion <= 2);
         $this->assertTrue($my5x || $maria10);
         $tmp = (chr($server_ver->type) == 'M') || (chr($server_ver->type) == 'A');
         $this->assertTrue($tmp);
