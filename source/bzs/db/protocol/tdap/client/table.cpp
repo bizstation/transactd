@@ -240,7 +240,7 @@ public:
     {
         len = *((unsigned short*)ptr);
         ptr += DATASIZE_BYTE;
-        sqnum = *((int*)(ptr));
+        sqnum = len ? *((int*)(ptr)) : -1;
         ptr += sizeof(int);
         ptr += len;
         return ptr;
