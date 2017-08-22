@@ -341,12 +341,10 @@ private:
         m_fds->append(r.m_fds.get());
         
         // append memblock
-        std::vector<short*> endIndex;
         for (size_t i = 0;i < r.m_memblock.size(); ++i)
         {
             m_memblock.push_back(r.m_memblock[i]);
-            short* ei = r.m_memblock[i]->appendEndFieldIndex(*r.m_memblock[i]->endFieldIndex + fieldCount);
-            endIndex.push_back(ei);
+            *(r.m_memblock[i]->endFieldIndex) = *(r.m_memblock[i]->endFieldIndex) + fieldCount;
         }
 
         if (r.size() == 0) return;
@@ -360,17 +358,18 @@ private:
         autoMemory* nullRecordAm = 0;
         for (int i = 0; i < (int)m_recordset.size(); ++i)
         {
+            // each row
             memoryRecord* row = dynamic_cast<memoryRecord*>(m_recordset[i]);
             for (int j = 0; j < (int)rblockSize; ++j)
             {
+                // each memory block
                 autoMemory* mb = amar + amsize;
                 if (indexes[i] != -1)
                 {
                     memoryRecord* srow = dynamic_cast<memoryRecord*>(r.m_recordset[indexes[i]]);
                     assert(srow->memBlockSize() == rblockSize);
                     const autoMemory& smb = srow->memBlock(j);
-                    int index = r.getMemBlockIndex(smb.ptr);
-                    row->setRecordData(mb, smb.ptr, 0, endIndex[index], false);
+                    row->setRecordData(mb, smb.ptr, 0, smb.endFieldIndex, false);
                 }else
                 {
                     // Alloc data buffer for not found record.
@@ -378,7 +377,7 @@ private:
                     {
                         nullRecordAm = autoMemory::create();
                         nullRecordAm->addref();
-                        short endIndex = (short)m_fds->size();
+                        short endIndex = (short)(m_fds->size());
                         nullRecordAm->setParams(0, r.m_fds->totalFieldLen(), &endIndex, true);
                         m_memblock.push_back(boost::shared_ptr<autoMemory>(nullRecordAm, boost::bind(&autoMemory::release, _1)));
                     }                    
@@ -620,14 +619,11 @@ public:
     inline void removeField(int index)
     {
         m_fds->remove(index);
-
         for (int i = 0; i < (int)m_memblock.size(); ++i)
         {
-            if (*(m_memblock[i]->endFieldIndex) > index)
-            {
-                short v = *(m_memblock[i]->endFieldIndex) - 1;
-                *(m_memblock[i]->endFieldIndex) = v;
-            }
+            short v = *(m_memblock[i]->endFieldIndex);
+            if (v > index)
+                *(m_memblock[i]->endFieldIndex) = v - 1;
         }
     }
 
