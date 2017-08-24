@@ -27,7 +27,7 @@
  
  #ifdef HAVE_PSI_INTERFACE
  #ifdef HAVE_MMAP
-@@ -556,17 +556,18 @@ extern mysql_mutex_t
+@@ -558,17 +558,18 @@ extern mysql_mutex_t
         LOCK_item_func_sleep, LOCK_status, LOCK_show_status,
         LOCK_error_log, LOCK_delayed_insert, LOCK_short_uuid_generator,
         LOCK_delayed_status, LOCK_delayed_create, LOCK_crypt, LOCK_timezone,

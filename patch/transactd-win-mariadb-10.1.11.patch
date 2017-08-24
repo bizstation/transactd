@@ -1,6 +1,6 @@
 --- sql/mysqld.h
 +++ sql/mysqld.h
-@@ -148,7 +148,7 @@
+@@ -177,7 +177,7 @@ extern char log_error_file[FN_REFLEN], *opt_tc_log_file;
  extern const double log_10[309];
  extern ulonglong keybuff_size;
  extern ulonglong thd_startup_options;
@@ -9,7 +9,7 @@
  extern ulong binlog_cache_use, binlog_cache_disk_use;
  extern ulong binlog_stmt_cache_use, binlog_stmt_cache_disk_use;
  extern ulong aborted_threads,aborted_connects;
-@@ -208,7 +208,7 @@
+@@ -241,7 +241,7 @@ extern handlerton *heap_hton;
  extern const char *load_default_groups[];
  extern struct my_option my_long_options[];
  int handle_early_options();
@@ -18,7 +18,7 @@
  extern "C" MYSQL_PLUGIN_IMPORT int orig_argc;
  extern "C" MYSQL_PLUGIN_IMPORT char **orig_argv;
  extern pthread_attr_t connection_attrib;
-@@ -230,7 +230,7 @@
+@@ -267,7 +267,7 @@ extern const char *encryption_algorithm_names[];
    THR_MALLOC is a key which will be used to set/get MEM_ROOT** for a thread,
    using my_pthread_setspecific_ptr()/my_thread_getspecific_ptr().
  */
@@ -27,18 +27,7 @@
  
  #ifdef HAVE_PSI_INTERFACE
  #ifdef HAVE_MMAP
-@@ -501,8 +501,8 @@
- #ifdef HAVE_OPENSSL
- extern mysql_mutex_t LOCK_des_key_file;
- #endif
--extern mysql_mutex_t LOCK_server_started;
--extern mysql_cond_t COND_server_started;
-+extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_server_started;
-+extern MYSQL_PLUGIN_IMPORT mysql_cond_t COND_server_started;
- extern mysql_rwlock_t LOCK_grant, LOCK_sys_init_connect, LOCK_sys_init_slave;
- extern mysql_rwlock_t LOCK_system_variables_hash;
- extern mysql_cond_t COND_thread_count;
-@@ -558,10 +558,11 @@ extern mysql_mutex_t
+@@ -558,17 +558,18 @@ extern mysql_mutex_t
         LOCK_item_func_sleep, LOCK_status, LOCK_show_status,
         LOCK_error_log, LOCK_delayed_insert, LOCK_short_uuid_generator,
         LOCK_delayed_status, LOCK_delayed_create, LOCK_crypt, LOCK_timezone,
@@ -51,6 +40,15 @@
  extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_thread_count;
  #ifdef HAVE_OPENSSL
  extern char* des_key_file;
+ extern mysql_mutex_t LOCK_des_key_file;
+ #endif
+-extern mysql_mutex_t LOCK_server_started;
+-extern mysql_cond_t COND_server_started;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_server_started;
++extern MYSQL_PLUGIN_IMPORT mysql_cond_t COND_server_started;
+ extern mysql_rwlock_t LOCK_grant, LOCK_sys_init_connect, LOCK_sys_init_slave;
+ extern mysql_rwlock_t LOCK_system_variables_hash;
+ extern mysql_cond_t COND_thread_count;
 --- sql/slave.h
 +++ sql/slave.h
 @@ -254,7 +254,7 @@ bool net_request_file(NET* net, const char* fname);
@@ -64,7 +62,7 @@
  
 --- sql/sql_cache.h
 +++ sql/sql_cache.h
-@@ -596,5 +596,5 @@
+@@ -596,5 +596,5 @@ struct Query_cache_query_flags
  #define query_cache_is_cacheable_query(L) 0
  #endif /*HAVE_QUERY_CACHE*/
  
@@ -73,7 +71,7 @@
  #endif
 --- sql/handler.h
 +++ sql/handler.h
-@@ -762,7 +762,7 @@ typedef bool (stat_print_fn)(THD *thd, const char *type, uint type_len,
+@@ -763,7 +763,7 @@ typedef bool (stat_print_fn)(THD *thd, const char *type, uint type_len,
                               const char *file, uint file_len,
                               const char *status, uint status_len);
  enum ha_stat_type { HA_ENGINE_STATUS, HA_ENGINE_LOGS, HA_ENGINE_MUTEX };

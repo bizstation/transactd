@@ -1,6 +1,6 @@
 --- sql/mysqld.h
 +++ sql/mysqld.h
-@@ -298,7 +298,7 @@ extern ulong opt_ndb_wait_setup;
+@@ -299,7 +299,7 @@ extern ulong opt_ndb_wait_setup;
  extern const char *load_default_groups[];
  extern struct my_option my_long_options[];
  extern struct my_option my_long_early_options[];
@@ -9,7 +9,7 @@
  extern "C" MYSQL_PLUGIN_IMPORT int orig_argc;
  extern "C" MYSQL_PLUGIN_IMPORT char **orig_argv;
  extern my_thread_attr_t connection_attrib;
-@@ -356,7 +356,7 @@ static inline int my_thread_set_THR_MALLOC(MEM_ROOT ** hdl)
+@@ -357,7 +357,7 @@ static inline int my_thread_set_THR_MALLOC(MEM_ROOT ** hdl)
    using my_set_thread_local()/my_get_thread_local().
  */
  extern MYSQL_PLUGIN_IMPORT thread_local_key_t THR_THD;
@@ -18,7 +18,7 @@
  
  static inline THD * my_thread_get_THR_THD()
  {
-@@ -529,7 +529,7 @@ extern PSI_memory_key key_memory_binlog_recover_exec;
+@@ -530,7 +530,7 @@ extern PSI_memory_key key_memory_binlog_recover_exec;
  extern PSI_memory_key key_memory_blob_mem_storage;
  
  extern PSI_memory_key key_memory_Sys_var_charptr_value;
@@ -27,7 +27,7 @@
  extern PSI_memory_key key_memory_user_var_entry;
  extern PSI_memory_key key_memory_user_var_entry_value;
  extern PSI_memory_key key_memory_Slave_job_group_group_relay_log_name;
-@@ -619,7 +619,7 @@ extern PSI_memory_key key_memory_write_set_extraction;
+@@ -620,7 +620,7 @@ extern PSI_memory_key key_memory_write_set_extraction;
  extern PSI_memory_key key_memory_thd_timer;
  extern PSI_memory_key key_memory_THD_Session_tracker;
  extern PSI_memory_key key_memory_THD_Session_sysvar_resource_manager;
@@ -36,7 +36,7 @@
  extern PSI_memory_key key_memory_fill_schema_schemata;
  extern PSI_memory_key key_memory_native_functions;
  extern PSI_memory_key key_memory_JSON;
-@@ -812,8 +812,8 @@ extern mysql_mutex_t
+@@ -814,8 +814,8 @@ extern mysql_mutex_t
  extern char* des_key_file;
  extern mysql_mutex_t LOCK_des_key_file;
  #endif
@@ -58,7 +58,7 @@
  #endif
 --- sql/mdl.h
 +++ sql/mdl.h
-@@ -1168,7 +1168,7 @@ extern "C" const char* thd_enter_cond(MYSQL_THD thd, mysql_cond_t *cond,
+@@ -1168,7 +1168,7 @@ void mdl_destroy();
  
  
  #ifndef DBUG_OFF
@@ -93,11 +93,6 @@
    NOT_YET_DETERMINED_GROUP
  };
  /// Global state of GTIDs.
--extern Gtid_state *gtid_state;
-+extern MYSQL_PLUGIN_IMPORT Gtid_state *gtid_state;
- 
- 
- /**
 -extern Gtid_state *gtid_state;
 +extern MYSQL_PLUGIN_IMPORT Gtid_state *gtid_state;
  

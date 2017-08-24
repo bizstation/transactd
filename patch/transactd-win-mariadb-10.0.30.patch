@@ -51,7 +51,7 @@
  extern mysql_cond_t COND_thread_count;
 --- sql/slave.h
 +++ sql/slave.h
-@@ -247,7 +247,7 @@ bool net_request_file(NET* net, const char* fname);
+@@ -246,7 +246,7 @@ bool net_request_file(NET* net, const char* fname);
  extern bool volatile abort_loop;
  extern Master_info *active_mi; /* active_mi for multi-master */
  extern Master_info *default_master_info; /* To replace active_mi */
@@ -82,7 +82,7 @@
  enum log_status
 --- storage/xtradb/btr/btr0cur.cc
 +++ storage/xtradb/btr/btr0cur.cc
-@@ -3863,7 +3863,7 @@ and right boundary then btr_estimate_n_rows_in_range_low() will retry
+@@ -3863,7 +3863,7 @@ static const unsigned	rows_in_range_max_retries = 4;
  /** We pretend that a range has that many records if the tree keeps changing
  for rows_in_range_max_retries retries while we try to estimate the records
  in a given range. */
@@ -100,7 +100,7 @@
  btr_estimate_n_rows_in_range_low(
  	dict_index_t*	index,
  	const dtuple_t*	tuple1,
-@@ -4017,7 +4017,7 @@ rows_in_range_arbitrary_ret_val as a result (if
+@@ -4017,7 +4017,7 @@ btr_estimate_n_rows_in_range_low(
  					return(rows_in_range_arbitrary_ret_val);
  				}
  
@@ -109,7 +109,7 @@
  					btr_estimate_n_rows_in_range_low(
  						index, tuple1, mode1,
  						tuple2, mode2, trx,
-@@ -4083,7 +4083,7 @@ rows_in_range_arbitrary_ret_val as a result (if
+@@ -4083,7 +4083,7 @@ btr_estimate_n_rows_in_range_low(
  @param[in]	mode2	search mode for range end
  @param[in]	trx	trx
  @return estimated number of rows */
@@ -118,7 +118,7 @@
  btr_estimate_n_rows_in_range(
  	dict_index_t*	index,
  	const dtuple_t*	tuple1,
-@@ -4092,7 +4092,7 @@ rows_in_range_arbitrary_ret_val as a result (if
+@@ -4092,7 +4092,7 @@ btr_estimate_n_rows_in_range(
  	ulint		mode2,
  	trx_t*		trx)
  {

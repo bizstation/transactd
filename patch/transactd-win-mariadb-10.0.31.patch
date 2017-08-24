@@ -27,7 +27,7 @@
  
  #ifdef HAVE_PSI_INTERFACE
  #ifdef HAVE_MMAP
-@@ -522,17 +522,18 @@ extern mysql_mutex_t
+@@ -524,17 +524,18 @@ extern mysql_mutex_t
         LOCK_item_func_sleep, LOCK_status, LOCK_show_status,
         LOCK_error_log, LOCK_delayed_insert, LOCK_short_uuid_generator,
         LOCK_delayed_status, LOCK_delayed_create, LOCK_crypt, LOCK_timezone,
@@ -51,7 +51,7 @@
  extern mysql_cond_t COND_thread_count;
 --- sql/slave.h
 +++ sql/slave.h
-@@ -247,7 +247,7 @@ bool net_request_file(NET* net, const char* fname);
+@@ -246,7 +246,7 @@ bool net_request_file(NET* net, const char* fname);
  extern bool volatile abort_loop;
  extern Master_info *active_mi; /* active_mi for multi-master */
  extern Master_info *default_master_info; /* To replace active_mi */
