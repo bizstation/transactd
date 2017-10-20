@@ -182,13 +182,17 @@ recordset& recordset::reverse()
 
 recordset& recordset::join(const recordset& rs, recordsetQuery& rq)
 {
-    m_imple->nestedLoopJoin(*rs.m_imple, rq, true);
+    recordset* rst = rs.clone();
+    m_imple->nestedLoopJoin(*rst->m_imple, rq, true);
+    rst->release();
     return *this;
 }
 
 recordset& recordset::outerJoin(const recordset& rs, recordsetQuery& rq)
 {
-    m_imple->nestedLoopJoin(*rs.m_imple, rq, false);
+    recordset* rst = rs.clone();
+    m_imple->nestedLoopJoin(*rst->m_imple, rq, false);
+    rst->release();
     return *this;
 }
 

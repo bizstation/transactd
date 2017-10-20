@@ -18,7 +18,7 @@
  
  static inline THD * my_thread_get_THR_THD()
  {
-@@ -529,7 +529,7 @@ extern PSI_memory_key key_memory_binlog_recover_exec;
+@@ -530,7 +530,7 @@ extern PSI_memory_key key_memory_binlog_recover_exec;
  extern PSI_memory_key key_memory_blob_mem_storage;
  
  extern PSI_memory_key key_memory_Sys_var_charptr_value;
@@ -27,7 +27,7 @@
  extern PSI_memory_key key_memory_user_var_entry;
  extern PSI_memory_key key_memory_user_var_entry_value;
  extern PSI_memory_key key_memory_Slave_job_group_group_relay_log_name;
-@@ -619,7 +619,7 @@ extern PSI_memory_key key_memory_write_set_extraction;
+@@ -620,7 +620,7 @@ extern PSI_memory_key key_memory_write_set_extraction;
  extern PSI_memory_key key_memory_thd_timer;
  extern PSI_memory_key key_memory_THD_Session_tracker;
  extern PSI_memory_key key_memory_THD_Session_sysvar_resource_manager;
@@ -36,7 +36,7 @@
  extern PSI_memory_key key_memory_fill_schema_schemata;
  extern PSI_memory_key key_memory_native_functions;
  extern PSI_memory_key key_memory_JSON;
-@@ -813,8 +813,8 @@ extern mysql_mutex_t
+@@ -814,8 +814,8 @@ extern mysql_mutex_t
  extern char* des_key_file;
  extern mysql_mutex_t LOCK_des_key_file;
  #endif
@@ -58,7 +58,7 @@
  #endif
 --- sql/mdl.h
 +++ sql/mdl.h
-@@ -1168,7 +1168,7 @@ void mdl_destroy();
+@@ -1175,7 +1175,7 @@ void mdl_destroy();
  
  
  #ifndef DBUG_OFF
@@ -69,7 +69,7 @@
  
 --- sql/sql_base.h
 +++ sql/sql_base.h
-@@ -120,7 +120,7 @@ enum enum_tdc_remove_table_type {TDC_RT_REMOVE_ALL, TDC_RT_REMOVE_NOT_OWN,
+@@ -121,7 +121,7 @@ enum enum_tdc_remove_table_type {TDC_RT_REMOVE_ALL, TDC_RT_REMOVE_NOT_OWN,
  #define RTFC_CHECK_KILLED_FLAG      0x0004
  
  bool check_dup(const char *db, const char *name, TABLE_LIST *tables);
@@ -80,7 +80,7 @@
  bool table_def_init(void);
 --- sql/rpl_gtid.h
 +++ sql/rpl_gtid.h
-@@ -571,7 +571,7 @@ private:
+@@ -572,7 +572,7 @@ private:
  
  
  /// Protects Gtid_state.  See comment above gtid_state for details.
@@ -89,7 +89,7 @@
  
  /// One of the locks that protects GTID_MODE.  See
  /// get_gtid_mode(enum_gtid_mode_lock).
-@@ -3115,7 +3115,7 @@ log.  So at the time the binary log begins, we just set
+@@ -3407,7 +3407,7 @@ log.  So at the time the binary log begins, we just set
    NOT_YET_DETERMINED_GROUP
  };
  /// Global state of GTIDs.
@@ -100,7 +100,7 @@
  /**
 --- sql/rpl_msr.h
 +++ sql/rpl_msr.h
-@@ -402,7 +402,7 @@ public:
+@@ -399,7 +399,7 @@ public:
  };
  
  /* Global object for multisourced slave. */

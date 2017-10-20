@@ -1,6 +1,6 @@
 --- sql/mysqld.h
 +++ sql/mysqld.h
-@@ -177,7 +177,7 @@
+@@ -177,7 +177,7 @@ extern const char *server_uuid_ptr;
  extern const double log_10[309];
  extern ulonglong keybuff_size;
  extern ulonglong thd_startup_options;
@@ -9,7 +9,7 @@
  extern ulong binlog_cache_use, binlog_cache_disk_use;
  extern ulong binlog_stmt_cache_use, binlog_stmt_cache_disk_use;
  extern ulong aborted_threads,aborted_connects;
-@@ -276,7 +276,7 @@
+@@ -277,7 +277,7 @@ extern struct my_option my_long_options[];
  extern struct my_option my_long_early_options[];
  int handle_early_options();
  void adjust_related_options(ulong *requested_open_files);
@@ -18,7 +18,7 @@
  extern "C" MYSQL_PLUGIN_IMPORT int orig_argc;
  extern "C" MYSQL_PLUGIN_IMPORT char **orig_argv;
  extern pthread_attr_t connection_attrib;
-@@ -588,8 +588,8 @@
+@@ -590,8 +590,8 @@ extern mysql_mutex_t
  #ifdef HAVE_OPENSSL
  extern mysql_mutex_t LOCK_des_key_file;
  #endif
@@ -31,7 +31,7 @@
  extern mysql_cond_t COND_manager;
 --- sql/sql_cache.h
 +++ sql/sql_cache.h
-@@ -582,5 +582,5 @@
+@@ -582,5 +582,5 @@ struct Query_cache_query_flags
  #define query_cache_is_cacheable_query(L) 0
  #endif /*HAVE_QUERY_CACHE*/
  
@@ -51,7 +51,7 @@
  
 --- sql/mdl.h
 +++ sql/mdl.h
-@@ -946,7 +946,7 @@ extern "C" const char* thd_enter_cond(MYSQL_THD thd, mysql_cond_t *cond,
+@@ -946,7 +946,7 @@ void mdl_destroy();
  
  
  #ifndef DBUG_OFF

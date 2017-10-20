@@ -1,5 +1,16 @@
 Release note
 ================================================================================
+Version 3.8.0 2017/10/20
+================================================================================
+Modifications
+--------------------------------------------------------------------------------
+* Fix a bug in 1:n table JOIN.
+* Fix a bug that causes problems if remove columns after recordset JOIN.
+* Fix not to call start or end snapshot against PSQL server.
+* Support MySQL 5.6.37 and 5.7.19.
+* Fix a bug that values may not be compared correctly in test_tdclcpp_v3.
+
+
 Version 3.7.3 2017/06/07
 ================================================================================
 Modifications

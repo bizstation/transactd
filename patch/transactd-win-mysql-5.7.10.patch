@@ -58,7 +58,7 @@
  #endif
 --- sql/mdl.h
 +++ sql/mdl.h
-@@ -1139,7 +1139,7 @@ extern "C" const char* thd_enter_cond(MYSQL_THD thd, mysql_cond_t *cond,
+@@ -1139,7 +1139,7 @@ void mdl_destroy();
  
  
  #ifndef DBUG_OFF
@@ -93,11 +93,6 @@
    NOT_YET_DETERMINED_GROUP
  };
  /// Global state of GTIDs.
--extern Gtid_state *gtid_state;
-+extern MYSQL_PLUGIN_IMPORT Gtid_state *gtid_state;
- 
- 
- /**
 -extern Gtid_state *gtid_state;
 +extern MYSQL_PLUGIN_IMPORT Gtid_state *gtid_state;
  

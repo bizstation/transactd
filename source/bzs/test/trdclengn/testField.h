@@ -3071,7 +3071,7 @@ void testCompTimeStampMa()
             comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
             maTimeStamp ld(4, true), rd(4, true);
             ld = _T("1970-01-02 00:00:59.0000"); rd = _T("1970-01-02 00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
-            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) < 0);
             ld = _T("1970-01-02 00:00:59.0001"); rd = _T("1970-01-02 00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
             BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
             ld = _T("1970-01-02 00:00:59.0001"); rd = _T("1970-01-02 00:00:59.0000"); l = ld.getValue(); r = rd.getValue();
@@ -3083,7 +3083,7 @@ void testCompTimeStampMa()
             comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
             maTimeStamp ld(5, true), rd(5, true);
             ld = _T("1970-01-02 00:00:59.00001"); rd = _T("1970-01-02 00:00:59.00002"); l = ld.getValue(); r = rd.getValue();
-            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) < 0);
             ld = _T("1970-01-02 00:00:59.00001"); rd = _T("1970-01-02 00:00:59.00001"); l = ld.getValue(); r = rd.getValue();
             BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
             ld = _T("1970-01-02 00:00:59.00001"); rd = _T("1970-01-02 00:00:59.00000"); l = ld.getValue(); r = rd.getValue();
@@ -3094,7 +3094,7 @@ void testCompTimeStampMa()
             comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
             maTimeStamp ld(6, true), rd(6, true);
             ld = _T("1970-01-02 01:00:59.999999"); rd = _T("1970-01-02 10:00:59.100001"); l = ld.getValue(); r = rd.getValue();
-            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) < 0);
             ld = _T("1970-01-02 00:00:59.000001"); rd = _T("1970-01-02 00:00:59.000001"); l = ld.getValue(); r = rd.getValue();
             BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
             ld = _T("1970-01-02 10:00:59.000000"); rd = _T("1970-01-02 10:00:58.999999"); l = ld.getValue(); r = rd.getValue();

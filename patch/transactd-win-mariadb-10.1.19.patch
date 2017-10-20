@@ -51,7 +51,7 @@
  extern mysql_cond_t COND_thread_count;
 --- sql/slave.h
 +++ sql/slave.h
-@@ -255,7 +255,7 @@ void slave_background_kill_request(THD *to_kill);
+@@ -256,7 +256,7 @@ void slave_background_kill_request(THD *to_kill);
  extern bool volatile abort_loop;
  extern Master_info *active_mi; /* active_mi for multi-master */
  extern Master_info *default_master_info; /* To replace active_mi */

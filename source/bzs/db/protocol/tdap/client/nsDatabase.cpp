@@ -693,6 +693,7 @@ void nsdatabase::resetSnapshot()
 
 void nsdatabase::beginSnapshot(short bias, binlogPos* bpos)
 {
+    if (!isUseTransactd()) return;
     if (!checkAssociate()) return;
 
     if (m_nsimpl->snapShotCount == 0)
@@ -727,6 +728,7 @@ void nsdatabase::beginSnapshot(short bias, binlogPos* bpos)
 
 void nsdatabase::endSnapshot()
 {
+    if (!isUseTransactd()) return;
     m_nsimpl->snapShotCount--;
     if (m_nsimpl->snapShotCount == 0)
         m_stat = tdap(TD_END_SNAPSHOT, NULL, NULL, NULL, NULL, 0, 0);

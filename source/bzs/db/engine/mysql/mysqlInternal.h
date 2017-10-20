@@ -796,6 +796,9 @@ struct innodb_prebuit
     
     void* dummy2; //mysql_row_templ_t* mysql_template
     void* dummy3; //mem_heap_t*	heap;
+#if (defined(MYSQL_5_7) && MYSQL_VERSION_ID >= 50719) || (defined(MYSQL_5_6) && MYSQL_VERSION_ID >= 50637)
+    void* dummy3b; //mem_heap_t*	cursor_heap;
+#endif
     void* dummy4; //ins_node_t*	ins_node;	
     void* dummy5; //byte* ins_upd_rec_buff	
     void* dummy6; //const byte*	default_rec;	
