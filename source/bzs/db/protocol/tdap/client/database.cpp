@@ -1239,6 +1239,8 @@ inline int moveVaileRecord(table* src)
 #define MOVE_TYPE_KEY    0
 #define MOVE_TYPE_NONKEY -1
 #define MOVE_TYPE_MULTI  -2
+#define MOVE_TYPE_MULTI_FIRST_READED  -3
+
 
 inline void moveNextRecord(table* src, short keyNum)
 {
@@ -1253,7 +1255,7 @@ inline void moveNextRecord(table* src, short keyNum)
 inline char_td findUniqueKeynum(table* src)
 {
     const tabledef* td =  src->tableDef();
-    if (td->parentKeyNum != 0xff) return td->parentKeyNum;
+    if (td->primaryKeyNum != 0xff) return td->primaryKeyNum;
     for (int i=0;i<td->keyCount;++i)
     {
         const keydef* kd = &td->keyDefs[i];
@@ -1272,6 +1274,8 @@ inline void moveFirstRecord(table* src, short keyNum)
     }
     else if (keyNum == MOVE_TYPE_NONKEY)
         src->stepFirst();
+    else if (keyNum == MOVE_TYPE_MULTI_FIRST_READED)
+        ;
     else
     {
         query q;
