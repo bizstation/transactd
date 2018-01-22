@@ -309,7 +309,7 @@ class prepareHandler
     #define MAX_KEY_SEGMENT 8
     void makeKeyFieldBitmap(std::bitset<256>& bts, char keynum)
     {
-        if (keynum >= 0)
+        if (keynum >= 0 && keynum < (int)m_table->s->keys)
         {
             const KEY* key = &m_table->key_info[(int)keynum];
             if (key)
@@ -328,7 +328,7 @@ class prepareHandler
 
     void makeKeyFieldBitmap(int keynum)
     {
-        if (keynum >= 0)
+        if (keynum >= 0 && keynum < (int)m_table->s->keys)
         {
             const KEY* key = &m_table->key_info[(int)keynum];
             if (key)
