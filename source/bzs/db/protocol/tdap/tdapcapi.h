@@ -771,6 +771,6 @@ struct handshale_t
 
 #define TRANSACTD_VER_MAJOR 3//##7 Build marker! Don't remove
 #define TRANSACTD_VER_MINOR 8//##8 Build marker! Don't remove
-#define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
+#define TRANSACTD_VER_RELEASE 1//##9 Build marker! Don't remove
 
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

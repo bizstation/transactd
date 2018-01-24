@@ -29,8 +29,8 @@
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,8,0,256
- PRODUCTVERSION 3,8,0,256
+ FILEVERSION 3,8,0,258
+ PRODUCTVERSION 3,8,0,258
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -47,9 +47,9 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "BizStation Corp."
             VALUE "FileDescription", "Transactd Query executer"
-            VALUE "FileVersion", "3.8.0.256"
+            VALUE "FileVersion", "3.8.0.258"
             VALUE "LegalCopyright", "Copyright(C) 2016 BizStation Corp"
-            VALUE "ProductVersion", "3.8.0.256"
+            VALUE "ProductVersion", "3.8.0.258"
             VALUE "ProductName", "Transactd Client (GPL V2)"
         END
     END
