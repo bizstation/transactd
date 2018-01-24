@@ -1513,10 +1513,7 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size,
             if (fd->null_bit && nullable)
             {
                 isNull = (*null_ptr & null_bit) != 0;
-                if (isNull)
-                    fd->set_null();
-                else
-                    fd->set_notnull();
+                
                 if (null_bit == (uchar)128)
                 {
                     ++null_ptr;
@@ -1531,6 +1528,7 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size,
             {
                 if (!isNull)
                 {
+                    fd->set_notnull();
                     int len = fd->pack_length();
                     if (isVarType(fd->type()))
                     {
@@ -1545,8 +1543,12 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size,
                     memcpy(fd->ptr, p, len);
                     p += len;
                     size -= len;
-                }else
+                }
+                else
+                {
+                    fd->set_null();
                     memset(fd->ptr, 0, fd->pack_length());
+                }
             }
         }
         if (m_table->s->blob_fields)
