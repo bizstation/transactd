@@ -729,7 +729,7 @@ std::string sqlBuilder::sqlCreateTable(const char* fileName, fileSpec* fs,
                            uchar_td charsetIndexServer, const clsrv_ver* ver)
 {
     tabledef table;
-    memset(&table, 0, sizeof(tabledef));
+    table.cleanup();
     table.setFileNameA(fileName);
     table.charsetIndex = mysql::charsetIndex(GetACP());
     table.schemaCodePage = CP_UTF8;
