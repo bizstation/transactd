@@ -265,6 +265,12 @@ struct extRequestSeeks
 #pragma pack(pop)
 pragma_pop;
 
+
+#define JUDGE_TYPE_NONE     0
+#define JUDGE_TYPE_GT_OR_LE 1
+#define JUDGE_TYPE_EQUAL    2
+
+
 class fields;
 class fieldAdapter
 {
@@ -295,7 +301,7 @@ public:
     void reset()
     {
         m_keySeg = 0xff;
-        m_judgeType = 0;
+        m_judgeType = JUDGE_TYPE_NONE;
         m_sizeBytes = 0;
         m_judge = false;
         m_matched = false;
@@ -349,7 +355,7 @@ public:
         m_compFunc = fd->getCompFunc(m_sizeBytes);
         if (fd->opr == 2)
         {
-            m_judgeType = 0;
+            m_judgeType = JUDGE_TYPE_NONE;
             return 0;
         }
         if (key)
@@ -373,7 +379,7 @@ public:
                     if (valid && (is_cl_casein == is_srv_casein))
                     {
                         m_keySeg = (unsigned char)segmentIndex + 1;
-                        m_judgeType = (comp == eEqual) ? 2 : 1;
+                        m_judgeType = (comp == eEqual) ? JUDGE_TYPE_EQUAL : JUDGE_TYPE_GT_OR_LE;
                     }
                     break;
                 }
@@ -504,12 +510,15 @@ public:
             std::vector<fieldAdapter>::iterator cur = m_fields.begin();
             std::vector<fieldAdapter>::iterator end = begin + lastIndex;
             char tmpOpr = (lastIndex != req.logicalCount) ? end->m_fd->opr : 0;
+
+            // Sort conditions by current Keysegments order.
             std::sort(begin, end);
+            
             bool flag = true;
             while (cur != end)
             {
                 const_cast<logicalField*>(cur->m_fd)->opr = 1; // and
-                if (flag && cur->m_judgeType == 2)
+                if (flag && cur->m_judgeType == JUDGE_TYPE_EQUAL && 1 == cur->m_keySeg)
                     cur->m_judge = true;
                 else
                     flag = false;
@@ -517,7 +526,7 @@ public:
             }
 
             // if first logic is first segmnet then first logic can judge.
-            if ((begin->m_keySeg == 1) && begin->m_judgeType)
+            if (begin != end && begin->m_keySeg == 1 && begin->m_judgeType)
                 begin->m_judge = true;
 
             if (lastIndex == req.logicalCount)
