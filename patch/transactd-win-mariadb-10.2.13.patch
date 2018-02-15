@@ -1,0 +1,74 @@
+--- sql/mysqld.h
++++ sql/mysqld.h
+@@ -184,7 +184,7 @@ extern char log_error_file[FN_REFLEN], *opt_tc_log_file;
+ extern const double log_10[309];
+ extern ulonglong keybuff_size;
+ extern ulonglong thd_startup_options;
+-extern my_thread_id global_thread_id;
++extern MYSQL_PLUGIN_IMPORT my_thread_id global_thread_id;
+ extern ulong binlog_cache_use, binlog_cache_disk_use;
+ extern ulong binlog_stmt_cache_use, binlog_stmt_cache_disk_use;
+ extern ulong aborted_threads,aborted_connects;
+@@ -249,7 +249,7 @@ extern handlerton *heap_hton;
+ extern const char *load_default_groups[];
+ extern struct my_option my_long_options[];
+ int handle_early_options();
+-extern int mysqld_server_started, mysqld_server_initialized;
++extern MYSQL_PLUGIN_IMPORT int mysqld_server_started, mysqld_server_initialized;
+ extern "C" MYSQL_PLUGIN_IMPORT int orig_argc;
+ extern "C" MYSQL_PLUGIN_IMPORT char **orig_argv;
+ extern pthread_attr_t connection_attrib;
+@@ -564,18 +564,19 @@ extern mysql_mutex_t
+        LOCK_item_func_sleep, LOCK_status, LOCK_show_status,
+        LOCK_error_log, LOCK_delayed_insert, LOCK_short_uuid_generator,
+        LOCK_delayed_status, LOCK_delayed_create, LOCK_crypt, LOCK_timezone,
+-       LOCK_slave_list, LOCK_active_mi, LOCK_manager,
++       LOCK_slave_list/*, LOCK_active_mi*/, LOCK_manager,
+        LOCK_global_system_variables, LOCK_user_conn,
+        LOCK_prepared_stmt_count, LOCK_error_messages, LOCK_connection_count,
+        LOCK_slave_background;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_active_mi;
+ extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_thread_count;
+ extern mysql_mutex_t LOCK_start_thread;
+ #ifdef HAVE_OPENSSL
+ extern char* des_key_file;
+ extern mysql_mutex_t LOCK_des_key_file;
+ #endif
+-extern mysql_mutex_t LOCK_server_started;
+-extern mysql_cond_t COND_server_started;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_server_started;
++extern MYSQL_PLUGIN_IMPORT mysql_cond_t COND_server_started;
+ extern mysql_rwlock_t LOCK_grant, LOCK_sys_init_connect, LOCK_sys_init_slave;
+ extern mysql_prlock_t LOCK_system_variables_hash;
+ extern mysql_cond_t COND_thread_count, COND_start_thread;
+--- sql/slave.h
++++ sql/slave.h
+@@ -272,7 +272,7 @@ void slave_background_kill_request(THD *to_kill);
+ extern bool volatile abort_loop;
+ extern Master_info *active_mi; /* active_mi for multi-master */
+ extern Master_info *default_master_info; /* To replace active_mi */
+-extern Master_info_index *master_info_index;
++extern MYSQL_PLUGIN_IMPORT Master_info_index *master_info_index;
+ extern LEX_STRING default_master_connection_name;
+ extern my_bool replicate_same_server_id;
+ 
+--- sql/sql_cache.h
++++ sql/sql_cache.h
+@@ -604,5 +604,5 @@ struct Query_cache_query_flags
+ #define query_cache_is_cacheable_query(L) 0
+ #endif /*HAVE_QUERY_CACHE*/
+ 
+-extern Query_cache query_cache;
++extern MYSQL_PLUGIN_IMPORT Query_cache query_cache;
+ #endif
+--- sql/handler.h
++++ sql/handler.h
+@@ -770,7 +770,7 @@ typedef bool (stat_print_fn)(THD *thd, const char *type, size_t type_len,
+                              const char *file, size_t file_len,
+                              const char *status, size_t status_len);
+ enum ha_stat_type { HA_ENGINE_STATUS, HA_ENGINE_LOGS, HA_ENGINE_MUTEX };
+-extern st_plugin_int *hton2plugin[MAX_HA];
++extern MYSQL_PLUGIN_IMPORT st_plugin_int *hton2plugin[MAX_HA];
+ 
+ /* Transaction log maintains type definitions */
+ enum log_status

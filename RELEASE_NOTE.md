@@ -1,5 +1,15 @@
 Release note
 ================================================================================
+Version 3.8.2 2018/02/16
+================================================================================
+Modifications
+--------------------------------------------------------------------------------
+* Fix a bug that invalid result are returned in query with full scan.
+
+* Fix a bug that the primary key definition is not initialized with Pervasive
+  compatible table generation.
+
+
 Version 3.8.1 2018/01/25
 ================================================================================
 Modifications
