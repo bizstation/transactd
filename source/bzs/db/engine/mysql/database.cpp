@@ -2429,6 +2429,7 @@ __int64 table::insert(bool ncc)
 
     {
         autoincSetup setup(m_table);
+        m_table->use_all_columns();
         setKeyNullFlags();
         if (!m_mysqlNull) setFieldNullFlags();
 		setTimeStamp(true /* insert */);
@@ -2436,11 +2437,8 @@ __int64 table::insert(bool ncc)
         m_stat = m_table->file->ha_write_row(m_table->record[0]);
         autoincValue = m_table->file->insert_id_for_cur_row;
 
-        if (m_stat == 0 && m_table->file->insert_id_for_cur_row)
-        {
-            if (!m_bulkInserting)
-                m_table->file->ha_release_auto_increment();
-        }
+        if (!m_bulkInserting)
+            m_table->file->ha_release_auto_increment();
     }
 
     if (m_stat == 0)
