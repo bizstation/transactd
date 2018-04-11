@@ -744,7 +744,7 @@ public:
         typename Container::iterator it = begin(mdls), itb = begin(mdls),
                                      ite = end(mdls);
         it = itb = begin(mdls);
-        T& mdlb = *(*it);
+        const T mdlb = (*it);
         if (!m_tb->isUseTransactd())
             nstable::throwError(_T("activeObject P.SQL can not use this"),
                                 (short_td)0);
@@ -753,15 +753,15 @@ public:
             // if mdl has same key value, to be once read access to server
             T& mdl = *(*it);
             if ((it == itb) || !sorted ||
-                (m_map.compKeyValue(mdl, mdlb, m_tb->keyNum()) == true) ||
-                (m_map.compKeyValue(mdlb, mdl, m_tb->keyNum()) == true))
+                (m_map.compKeyValue(mdl, *mdlb, m_tb->keyNum()) == true) ||
+                (m_map.compKeyValue(*mdlb, mdl, m_tb->keyNum()) == true))
             {
                 m_map.setKeyValues(mdl, fds, m_tb->keyNum());
                 keydef* kd = &m_tb->tableDef()->keyDefs[(int)m_tb->keyNum()];
                 for (int i = 0; i < kd->segmentCount; ++i)
                     q.addSeekKeyValue(fds[kd->segments[i].fieldNum].c_str());
             }
-            mdlb = mdl;
+            mdlb = &mdl;
             ++it;
         }
         m_tb->setQuery(&q);
@@ -778,8 +778,8 @@ public:
             T& mdl = *(*it);
             if ((it != itb) &&
                 (!sorted ||
-                 (m_map.compKeyValue(mdl, mdlb, m_tb->keyNum()) == true) ||
-                 (m_map.compKeyValue(mdlb, mdl, m_tb->keyNum()) == true)))
+                 (m_map.compKeyValue(mdl, *mdlb, m_tb->keyNum()) == true) ||
+                 (m_map.compKeyValue(*mdlb, mdl, m_tb->keyNum()) == true)))
             {
                 m_tb->findNext();
                 if ((m_tb->stat() != STATUS_SUCCESS) &&
@@ -796,7 +796,7 @@ public:
             }
             if (m_tb->stat() == 0)
                 m_map.readMap(mdl, fds, m_option);
-            mdlb = mdl;
+            mdlb = &mdl;
             ++it;
         }
     }
@@ -832,13 +832,13 @@ public:
         typename Container::iterator it = begin(mdls), itb = begin(mdls),
                                      ite = end(mdls);
         it = itb = begin(mdls);
-        T& mdlb = *(*it);
+        const T* mdlb = (*it);
         while (it != ite)
         {
             T& mdl = *(*it);
             if ((it == itb) || !sorted ||
-                (m_map.compKeyValue(mdl, mdlb, m_tb->keyNum()) == true) ||
-                (m_map.compKeyValue(mdlb, mdl, m_tb->keyNum()) == true))
+                (m_map.compKeyValue(mdl, *mdlb, m_tb->keyNum()) == true) ||
+                (m_map.compKeyValue(*mdlb, mdl, m_tb->keyNum()) == true))
             {
                 m_map.setKeyValues(mdl, fds, m_tb->keyNum());
                 readIndex(m_tb, eSeekEqual);
@@ -856,7 +856,7 @@ public:
             }
             if (m_tb->stat() == 0)
                 m_map.readMap(mdl, fds, m_option);
-            mdlb = mdl;
+            mdlb = &mdl;
             ++it;
         }
     }
