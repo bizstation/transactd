@@ -38,6 +38,9 @@
 #endif
 #endif
 
+#ifdef _WIN32
+#define NO_CONNECT_TIMER
+#endif
 
 #include <stdio.h>
 #include <vector>
@@ -303,7 +306,7 @@ public:
         int n = 0;
         do
         {
-            int nn = recv(m_socket.native(), buf + n, (int)size - n, 0);
+            int nn = recv(m_socket.native_handle(), buf + n, (int)size - n, 0);
             if (n == SOCKET_ERROR)
             {
                 e = error_code(getErrorCode(), SYSTEM_CATEGORY);
@@ -318,7 +321,7 @@ public:
     size_t readAll(char* buf, size_t size, system::error_code& e)
     {
         errno = 0;
-        int n = recv(m_socket.native(), buf, (int)size, MSG_WAITALL);
+        int n = recv(m_socket.native_handle(), buf, (int)size, MSG_WAITALL);
         if (n == SOCKET_ERROR)
         {
 #ifdef _WIN32
@@ -335,7 +338,7 @@ public:
                                                 boost::system::error_code& e)
     {
         errno = 0;
-        int n = recv(m_socket.native(), buf, (int)size, 0);
+        int n = recv(m_socket.native_handle(), buf, (int)size, 0);
         if (n == SOCKET_ERROR)
             e = error_code(getErrorCode(), SYSTEM_CATEGORY);
         return (size_t)n;
@@ -344,7 +347,7 @@ public:
     void write(const char* buf, size_t size, int flag, boost::system::error_code& e)
     {
         errno = 0;
-        int n = send(m_socket.native(), buf, (int)size, flag);
+        int n = send(m_socket.native_handle(), buf, (int)size, flag);
         if (n == SOCKET_ERROR)
             e = error_code(getErrorCode(), SYSTEM_CATEGORY);
     }
@@ -371,7 +374,7 @@ public:
         ioctl(m_socket.native(), FIONBIO, &val);
     #else
         u_long val = 0;
-        ioctlsocket(m_socket.native(), FIONBIO, &val);
+        ioctlsocket(m_socket.native_handle(), FIONBIO, &val);
     #endif
     }
 };
@@ -539,9 +542,9 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
         struct timeval timeout;
         timeout.tv_usec = 0;
         timeout.tv_sec = time;
-        int ret = setsockopt(m_socket.native(), SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout,
+        int ret = setsockopt(m_socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout,
                    sizeof(timeout));
-        ret = setsockopt(m_socket.native(), SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout,
+        ret = setsockopt(m_socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout,
                    sizeof(timeout));
     }
 #ifdef USE_CONNECT_TIMER
@@ -768,7 +771,7 @@ class pipeConnection : public connectionImple<platform_stream>
         {
             t += 1000;
             DWORD n = 0;
-            BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
+            BOOL ret = GetNamedPipeHandleState(m_socket.native_handle(), NULL, &n,
                                            NULL, NULL, NULL, 0);
             if(ret == FALSE || n < 2)
                 m_e = boost::system::error_code(CLIENT_ERROR_CONNECTION_FAILURE, get_system_category());
@@ -791,7 +794,7 @@ class pipeConnection : public connectionImple<platform_stream>
             if (m_writebuf_p)
                 memset(m_writebuf_p, 0, sizeof(unsigned int));
             DWORD n = 0;
-            BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
+            BOOL ret = GetNamedPipeHandleState(m_socket.native_handle(), NULL, &n,
                                             NULL, NULL, NULL, 0);
             if(m_sendEvent && ret && n > 1)
             {
