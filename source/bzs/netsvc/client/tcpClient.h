@@ -755,8 +755,6 @@ class pipeConnection : public connectionImple<platform_stream>
 
     void write(unsigned int writeSize)
     {
-        //m_datalen = 0;
-        //m_rows = 0;
         m_e.clear();
         BOOL ret = SetEvent(m_sendEvent);
         if (ret == FALSE)
