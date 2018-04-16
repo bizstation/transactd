@@ -281,6 +281,7 @@ public:
 #define SYSTEM_CATEGORY system_category()
 #else
 #define SYSTEM_CATEGORY system_category
+#define native_handle() native()
 #endif
 
 inline int getErrorCode()
@@ -371,7 +372,7 @@ public:
     {
     #ifndef _WIN32
         int val = 0;
-        ioctl(m_socket.native(), FIONBIO, &val);
+        ioctl(m_socket.native_handle(), FIONBIO, &val);
     #else
         u_long val = 0;
         ioctlsocket(m_socket.native_handle(), FIONBIO, &val);
