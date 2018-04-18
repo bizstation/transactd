@@ -29,8 +29,8 @@
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,8,2,259
- PRODUCTVERSION 3,8,2,259
+ FILEVERSION 3,8,3,271
+ PRODUCTVERSION 3,8,3,271
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -47,9 +47,9 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "BizStation Corp."
             VALUE "FileDescription", "Transactd O/R map source code generator"
-            VALUE "FileVersion", "3.8.2.259"
+            VALUE "FileVersion", "3.8.3.271"
             VALUE "LegalCopyright", "Copyright(C) 2016 BizStation Corp"
-            VALUE "ProductVersion", "3.8.2.259"
+            VALUE "ProductVersion", "3.8.3.271"
             VALUE "ProductName", "Transactd Client (GPL V2)"
         END
     END
