@@ -744,7 +744,7 @@ public:
         typename Container::iterator it = begin(mdls), itb = begin(mdls),
                                      ite = end(mdls);
         it = itb = begin(mdls);
-        const T mdlb = (*it);
+        const T* mdlb = (*it);
         if (!m_tb->isUseTransactd())
             nstable::throwError(_T("activeObject P.SQL can not use this"),
                                 (short_td)0);
