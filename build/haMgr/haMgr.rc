@@ -30,12 +30,17 @@
 
 VS_VERSION_INFO VERSIONINFO
 <<<<<<< HEAD
+<<<<<<< HEAD
  FILEVERSION 3,8,3,271
  PRODUCTVERSION 3,8,3,271
 =======
  FILEVERSION 3,8,4,272
  PRODUCTVERSION 3,8,4,272
 >>>>>>> 4b33a56c... r6572 | yaguchi | 2018-07-23 13:32:22 +0900 (月, 23 7 2018) | 1 line
+=======
+ FILEVERSION 3,8,4,259
+ PRODUCTVERSION 3,8,4,259
+>>>>>>> 8001df08... r6570 | yaguchi | 2018-07-23 13:22:09 +0900 (月, 23 7 2018) | 1 line
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -53,6 +58,7 @@ BEGIN
             VALUE "CompanyName", "BizStation Corp."
             VALUE "FileDescription", "Transactd HA Managemer"
 <<<<<<< HEAD
+<<<<<<< HEAD
             VALUE "FileVersion", "3.8.3.271"
             VALUE "LegalCopyright", "Copyright(C) 2016 BizStation Corp"
             VALUE "ProductVersion", "3.8.3.271"
@@ -61,6 +67,11 @@ BEGIN
             VALUE "LegalCopyright", "Copyright(C) 2016 BizStation Corp"
             VALUE "ProductVersion", "3.8.4.272"
 >>>>>>> 4b33a56c... r6572 | yaguchi | 2018-07-23 13:32:22 +0900 (月, 23 7 2018) | 1 line
+=======
+            VALUE "FileVersion", "3.8.4.259"
+            VALUE "LegalCopyright", "Copyright(C) 2016 BizStation Corp"
+            VALUE "ProductVersion", "3.8.4.259"
+>>>>>>> 8001df08... r6570 | yaguchi | 2018-07-23 13:22:09 +0900 (月, 23 7 2018) | 1 line
             VALUE "ProductName", "Transactd Client (GPL V2)"
         END
     END
