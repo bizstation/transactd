@@ -29,8 +29,13 @@
 //
 
 VS_VERSION_INFO VERSIONINFO
+<<<<<<< HEAD
  FILEVERSION 3,8,2,259
  PRODUCTVERSION 3,8,2,259
+=======
+ FILEVERSION 3,8,4,272
+ PRODUCTVERSION 3,8,4,272
+>>>>>>> 4b33a56c... r6572 | yaguchi | 2018-07-23 13:32:22 +0900 (月, 23 7 2018) | 1 line
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -47,9 +52,15 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "BizStation Corp."
             VALUE "FileDescription", "Transactd client test program V3"
+<<<<<<< HEAD
             VALUE "FileVersion", "3.8.2.259"
             VALUE "LegalCopyright", "Copyright(C) 2016 BizStation Corp"
             VALUE "ProductVersion", "3.8.2.259"
+=======
+            VALUE "FileVersion", "3.8.4.272"
+            VALUE "LegalCopyright", "Copyright(C) 2016 BizStation Corp"
+            VALUE "ProductVersion", "3.8.4.272"
+>>>>>>> 4b33a56c... r6572 | yaguchi | 2018-07-23 13:32:22 +0900 (月, 23 7 2018) | 1 line
             VALUE "ProductName", "Transactd Client (GPL V2)"
         END
     END
