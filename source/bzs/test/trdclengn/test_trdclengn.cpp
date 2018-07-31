@@ -1516,13 +1516,14 @@ void testTransactionLockReadCommited(database* db)
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
     tb->seekNext();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+    tb->setFV(_T("name"), _T("update"));
     tb->update();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
     tb->unlock();// Can not unlock updated record
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->unlock");
     tb2->seekFirst();
     tb2->seekNext(ROW_LOCK_X);
-    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "undate unlock");
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "undate unlock" << tb2->stat());
 
     /* ---------------------------------------------------------*/
     /* Test multi record lock Transaction and Transaction       */

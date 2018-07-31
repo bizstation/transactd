@@ -69,6 +69,44 @@ void debuglog::write(const char* msg)
     }
 }
 
+void debuglog::dump(char* retStr, const char* p, int size, int limit)
+{
+    char* ptr = retStr;
+    size = std::min<int>(size, limit);
+    for (int i = 0; i < size; i += 16)
+    {
+        const char* pp = p + i;
+        int max = std::min<int>(size - i, 16);
+        for (int j = 0; j < max; j++)
+        {
+            sprintf_s(ptr, 4, "%02X ", *((unsigned char*)(pp + j)));
+            ptr += 3;
+        }
+        if (max != 16)
+        {
+            for (int j = 0; j < 16 - max; j++)
+            {
+                sprintf_s(ptr, 4, "   " );
+                ptr += 3;
+            }
+        }
+        sprintf_s(ptr, 2, " ");
+        ++ptr;
+        for (int j = 0; j < max; j++)
+        {
+            const char* p1 = pp + j;
+            if (*p1 >= ' ' && *p1 <= '~')
+                sprintf_s(ptr, 2, "%c", *p1);
+            else
+                sprintf_s(ptr, 2, " ");
+            ++ptr;
+        }
+        sprintf_s(ptr, 2, "\n");
+        ++ptr;
+    }
+    sprintf_s(ptr, 2, "\n");
+}
+
 void debuglog::dump(FILE* fp, const char* p, int size, int limit)
 {
     size = std::min<int>(size, limit);

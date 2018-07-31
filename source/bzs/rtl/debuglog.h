@@ -50,6 +50,7 @@ public:
     static void regist(debuglog* ptr) { m_ptr = ptr; };
     static debuglog* get() { return m_ptr; }
     static void dump(FILE* fp, const char* p, int size, int limit);
+    static void dump(char* str, const char* p, int size, int limit);
     static void init();
     static const char* dateTime();
 };

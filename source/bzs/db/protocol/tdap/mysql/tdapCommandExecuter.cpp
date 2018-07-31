@@ -197,20 +197,22 @@ void dumpStdErr(int op, request& req, table* tb)
               op, req.pbk ? req.pbk->handle : -1, tb ? tb->name().c_str() : "", *req.datalen,
               req.keyNum, req.keylen);
     sql_print_error("%s", msg.get());
+
+    char* p = msg.get();
     // dump Keybuf
     if (req.keylen && req.keybuf)
     {
-        sprintf_s(msg.get(), 1024, "[Transactd] Dump key buffer\n");
+        
+        sprintf_s(p, 1024, "[Transactd] Dump key buffer\n");
+        bzs::rtl::debuglog::dump(p + strlen(p), (char*)req.keybuf, req.keylen, 256);
         sql_print_error("%s", msg.get());
-        bzs::rtl::debuglog::dump(stderr, (char*)req.keybuf, req.keylen, 256);
     }
     // dump databuffer
     if (*req.datalen && req.data)
     {
-        sprintf_s(msg.get(), 1024, "[Transactd] Dump data buffer\n");
+        sprintf_s(p, 1024, "[Transactd] Dump data buffer\n");
+        bzs::rtl::debuglog::dump(p + strlen(p), (char*)req.data, (int)*req.datalen, 256);
         sql_print_error("%s", msg.get());
-        bzs::rtl::debuglog::dump(stderr, (char*)req.data, (int)*req.datalen,
-                                 256);
     }
 }
 

@@ -944,7 +944,8 @@ table* database::openTable(short tableIndex, short mode, bool autoCreate,
     tabledef* td = m_impl->dbDef->tableDefs(tableIndex);
     if (td)
     {
-        if (pm.setParam(td, mode, isUseTransactd(), m_impl->isTableReadOnly, m_impl->noPreloadSchema) == 0)
+        m_stat = pm.setParam(td, mode, isUseTransactd(), m_impl->isTableReadOnly, m_impl->noPreloadSchema);
+        if (m_stat == 0)
         {
             pm.setPath(path, this);
             return doOpenTable(&pm, ownerName);
